@@ -1,7 +1,10 @@
+module Lexer(Token(..), tokenize) where
+
 import Data.Char (isSpace, isAlpha, isAlphaNum)
 
 data Token = Variable String
            | Keyword String
+           deriving (Eq, Show)
 
 symbols = "\\.()"
 
