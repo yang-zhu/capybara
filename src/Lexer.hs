@@ -16,7 +16,7 @@ tokenize [] = []
 tokenize (c:cs)
   | isSpace c = tokenize cs
   | isAlpha c = let 
-      (rest, cs) = span isIdentifierChar cs
-      in Variable (c:rest) : tokenize cs
+      (rest, cs') = span isIdentifierChar cs
+      in Variable (c:rest) : tokenize cs'
   | c `elem` symbols = Keyword [c] : tokenize cs
   | otherwise = error "invalid input"

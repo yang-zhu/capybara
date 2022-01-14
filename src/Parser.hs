@@ -2,6 +2,7 @@ module Parser where
 
 import Lexer
 import Control.Applicative (Alternative(..))
+import Debug.Trace (trace)
 
 {-
 Grammar:
@@ -13,6 +14,7 @@ Atom ::= Variable | "(" Abstraction ")"
 data Expression = Var String
                 | Lambda String Expression
                 | App Expression Expression
+                deriving Show
 
 type ParseError = String
 
@@ -43,7 +45,7 @@ instance Applicative Parser where
 
 instance Alternative Parser where
   empty :: Parser a
-  empty = Parser $ \ts -> Left ""
+  empty = Parser $ \_ -> Left ""
   
   (<|>) :: Parser a -> Parser a -> Parser a
   p1 <|> p2 = Parser $ \ts -> case runParser p1 ts of
@@ -61,7 +63,11 @@ matchKeyword :: String -> Parser ()
 matchKeyword tok = do t <- token
                       case t of
                         Keyword t -> if t == tok then return () else empty
-                        t -> empty
+                        t -> errorMsg $ "Expected keyword " ++ tok ++ ", but found " ++ show t
+
+-- abort parsing and deliver an error message
+errorMsg :: String -> Parser a
+errorMsg msg = Parser $ \_ -> Left msg
 
 -- parse an abstraction
 abstraction :: Parser Expression
@@ -86,4 +92,4 @@ variable :: Parser String
 variable = do t <- token
               case t of
                 Variable v -> return v
-                _ -> empty
+                _ -> errorMsg $ "Expected a variable, but found " ++ show t ++ "."
