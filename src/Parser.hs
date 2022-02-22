@@ -1,4 +1,4 @@
-module Parser where
+module Parser(Expression(..), runParser, abstraction) where
 
 import Lexer
 import Control.Applicative (Alternative(..))
