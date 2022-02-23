@@ -12,7 +12,7 @@ Atom ::= Variable | "(" Abstraction ")"
 -}
 
 data Expression = Var String
-                | Lambda String Expression
+                | Lam String Expression
                 | App Expression Expression
                 deriving Show
 
@@ -75,7 +75,7 @@ abstraction = do matchKeyword "\\"
                  v <- variable
                  matchKeyword "."
                  e <- abstraction
-                 return (Lambda v e)
+                 return (Lam v e)
               <|> application
 
 -- parse an application
