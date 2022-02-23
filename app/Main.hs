@@ -1,9 +1,6 @@
 module Main where
 
 import Data.Foldable (toList)
-import qualified Data.Sequence as Seq
-import Control.Monad.Trans.Reader (runReader)
-import Control.Monad.Trans.State (runState)
 
 import Lexer
 import Parser

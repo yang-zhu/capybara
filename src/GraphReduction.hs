@@ -1,4 +1,4 @@
-module GraphReduction where
+module GraphReduction(run) where
 
 import Control.Monad.Trans.Reader
 import Control.Monad.Trans.State
@@ -38,17 +38,33 @@ astToGraph (App e1 e2) = do addr1 <- astToGraph e1
                             addr2 <- astToGraph e2
                             addNode (AppNode addr1 addr2)
 
-instantiate :: Int -> String -> Int -> State Graph Int
-instantiate body param arg = do
-  graph <- get
+-- check if the body contains any free occurrences of param
+ifParamInBody :: String -> Int -> Reader Graph Bool
+ifParamInBody param body = do
+  graph <- ask
   case Seq.index graph body of
-    VarNode v -> if v == param then return arg else return body
-    LamNode v e -> if v == param then return body else 
-      do e' <- instantiate e param arg
-         addNode (LamNode v e')
-    AppNode e1 e2 -> do e1' <- instantiate e1 param arg
-                        e2' <- instantiate e2 param arg
-                        addNode (AppNode e1' e2')
+    VarNode v -> return (v == param)
+    LamNode v e -> do res <- ifParamInBody param e
+                      return $ (v /= param) && res
+    AppNode e1 e2 -> do res1 <- ifParamInBody param e1
+                        res2 <- ifParamInBody param e2
+                        return $ res1 || res2
+
+instantiate :: String -> Int -> Int -> State Graph Int
+instantiate param body arg = do
+  graph <- get
+  let paramInBody = runReader (ifParamInBody param body) graph
+  if paramInBody 
+    then case Seq.index graph body of
+          VarNode v -> if v == param then return arg else return body
+          LamNode v e -> if v == param 
+                            then return body
+                            else do e' <- instantiate param e arg
+                                    addNode (LamNode v e')
+          AppNode e1 e2 -> do e1' <- instantiate param e1 arg
+                              e2' <- instantiate param e2 arg
+                              addNode (AppNode e1' e2')
+    else return body
 
 -- search for redex in an expression and do one reduction
 redex :: Int -> State Graph Bool
@@ -56,7 +72,7 @@ redex root = do
   graph <- get
   case Seq.index graph root of
     AppNode e1 e2 -> case Seq.index graph e1 of
-      LamNode param body -> do inst <- instantiate body param e2
+      LamNode param body -> do inst <- instantiate param body e2
                                graph' <- get
                                modify (Seq.update root (Seq.index graph' inst))
                                return True
