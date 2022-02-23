@@ -62,3 +62,16 @@ redex root = do
                                return True
       others -> redex e1
     others -> return False
+
+-- reduce the complete graph
+reduce :: Int -> Graph -> [Graph]
+reduce root graph = let (reduced, graph') = runState (redex root) graph
+                     in if reduced
+                        then graph : reduce root graph'
+                        else [graph] 
+
+-- run the reduction
+run :: Expression -> [Graph]
+run expr = let renamedExpr = runReader (renameFreeVars expr) []
+               (root, graph) = runState (astToGraph renamedExpr) Seq.empty
+            in reduce root graph

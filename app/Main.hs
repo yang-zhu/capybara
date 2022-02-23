@@ -12,10 +12,8 @@ import GraphReduction
 main :: IO ()
 main = case runParser abstraction (tokenize "((\\x.\\y.x)((\\w.w)(\\z.z)))(\\u.u)") of
         Left err -> putStrLn err
-        Right (ast, _) -> let newAST = runReader (renameFreeVars ast) []
-                              (root, graph) = runState (astToGraph newAST) Seq.empty
-                              (_, graph') = runState (redex root) graph 
-                          in print $ (toList graph', root)
+        Right (ast, _) -> let graphs = map toList (run ast)
+                           in mapM_ print graphs
 
 -- some lambda expression
 -- (\\x.(x x))(\\y.y)
