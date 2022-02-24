@@ -11,6 +11,7 @@ data Token
     | Keyword String
     deriving (Eq, Show)
 
+symbols :: [Char]
 symbols = "\\.()"
 
 isIdentifierChar :: Char -> Bool

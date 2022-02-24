@@ -2,7 +2,7 @@ module GraphReduction(run) where
 
 import Control.Monad.Trans.Reader
 import Control.Monad.Trans.State
-import Data.Sequence (Seq, (<|), (|>), (><), (!?))
+import Data.Sequence (Seq, (|>))
 import qualified Data.Sequence as Seq
 
 import Parser
@@ -88,8 +88,8 @@ redex root = do
                 graph' <- get
                 modify (Seq.update root (Seq.index graph' inst))
                 return True
-            others -> redex e1
-        others -> return False
+            _ -> redex e1
+        _ -> return False
 
 -- reduce the complete graph
 reduce :: Int -> Graph -> [Graph]

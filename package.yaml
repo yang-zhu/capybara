@@ -20,9 +20,14 @@ extra-source-files:
 description:         Please see the README on GitHub at <https://github.com/githubuser/capybara#readme>
 
 dependencies:
-- base >= 4.7 && < 5
-- transformers
-- containers
+  - base >= 4.7 && < 5
+  - transformers
+  - containers
+
+ghc-options:
+  - -Wall
+  - -Wincomplete-patterns
+  - -Wincomplete-uni-patterns
 
 default-extensions:
   - InstanceSigs

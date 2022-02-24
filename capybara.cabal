@@ -34,6 +34,7 @@ library
       src
   default-extensions:
       InstanceSigs
+  ghc-options: -Wall -Wincomplete-patterns -Wincomplete-uni-patterns
   build-depends:
       base >=4.7 && <5
     , containers
@@ -48,7 +49,7 @@ executable capybara-exe
       app
   default-extensions:
       InstanceSigs
-  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  ghc-options: -Wall -Wincomplete-patterns -Wincomplete-uni-patterns -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       base >=4.7 && <5
     , capybara
@@ -65,7 +66,7 @@ test-suite capybara-test
       test
   default-extensions:
       InstanceSigs
-  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  ghc-options: -Wall -Wincomplete-patterns -Wincomplete-uni-patterns -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       base >=4.7 && <5
     , capybara

@@ -6,7 +6,7 @@ module Parser
 
 import Lexer
 import Control.Applicative (Alternative(..))
-import Debug.Trace (trace)
+-- import Debug.Trace (trace)
 
 {-
 Grammar:
@@ -69,8 +69,8 @@ matchKeyword :: String -> Parser ()
 matchKeyword tok = do
     t <- token
     case t of
-        Keyword t -> if t == tok then return () else empty
-        t -> errorMsg $ "Expected keyword " ++ tok ++ ", but found " ++ show t
+        Keyword kw -> if kw == tok then return () else empty
+        _ -> errorMsg $ "Expected keyword " ++ tok ++ ", but found " ++ show t
 
 -- abort parsing and deliver an error message
 errorMsg :: String -> Parser a
