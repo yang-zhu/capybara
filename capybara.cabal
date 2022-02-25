@@ -25,6 +25,7 @@ source-repository head
 
 library
   exposed-modules:
+      Frontend
       GraphReduction
       Lexer
       Parser
@@ -34,11 +35,17 @@ library
       src
   default-extensions:
       InstanceSigs
+      OverloadedStrings
+      QuasiQuotes
   ghc-options: -Wall -Wincomplete-patterns -Wincomplete-uni-patterns
   build-depends:
       base >=4.7 && <5
     , containers
+    , raw-strings-qq
+    , scotty
+    , text
     , transformers
+    , wai-middleware-static
   default-language: Haskell2010
 
 executable capybara-exe
@@ -49,12 +56,18 @@ executable capybara-exe
       app
   default-extensions:
       InstanceSigs
+      OverloadedStrings
+      QuasiQuotes
   ghc-options: -Wall -Wincomplete-patterns -Wincomplete-uni-patterns -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       base >=4.7 && <5
     , capybara
     , containers
+    , raw-strings-qq
+    , scotty
+    , text
     , transformers
+    , wai-middleware-static
   default-language: Haskell2010
 
 test-suite capybara-test
@@ -66,10 +79,16 @@ test-suite capybara-test
       test
   default-extensions:
       InstanceSigs
+      OverloadedStrings
+      QuasiQuotes
   ghc-options: -Wall -Wincomplete-patterns -Wincomplete-uni-patterns -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       base >=4.7 && <5
     , capybara
     , containers
+    , raw-strings-qq
+    , scotty
+    , text
     , transformers
+    , wai-middleware-static
   default-language: Haskell2010

@@ -1,15 +1,15 @@
 module Lexer
-    ( Token(..)
-    , tokenize
-    ) where
+  ( Token (..),
+    tokenize,
+  )
+where
 
-import Data.Char (isSpace, isAlpha, isAlphaNum)
+import Data.Char (isAlpha, isAlphaNum, isSpace)
 
-
-data Token 
-    = Variable String
-    | Keyword String
-    deriving (Eq, Show)
+data Token
+  = Variable String
+  | Keyword String
+  deriving (Eq, Show)
 
 symbols :: [Char]
 symbols = "\\.()"
@@ -19,10 +19,10 @@ isIdentifierChar c = isAlphaNum c || c == '_'
 
 tokenize :: String -> [Token]
 tokenize [] = []
-tokenize (c:cs)
-    | isSpace c = tokenize cs
-    | isAlpha c =
-        let (rest, cs') = span isIdentifierChar cs
-        in Variable (c:rest) : tokenize cs'
-    | c `elem` symbols = Keyword [c] : tokenize cs
-    | otherwise = error "invalid input"
+tokenize (c : cs)
+  | isSpace c = tokenize cs
+  | isAlpha c =
+    let (rest, cs') = span isIdentifierChar cs
+     in Variable (c : rest) : tokenize cs'
+  | c `elem` symbols = Keyword [c] : tokenize cs
+  | otherwise = error "invalid input"

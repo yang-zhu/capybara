@@ -1,18 +1,17 @@
 module Main where
 
-import Data.Foldable (toList)
+import Frontend
 
-import Lexer
-import Parser
-import GraphReduction
 
+-- main :: IO ()
+-- main = case runParser abstraction (tokenize "(\\x.(x x))(\\y.y)") of
+--     Left err -> putStrLn err
+--     Right (ast, _) ->
+--         let graphs = map toList (run ast)
+--         in mapM_ print graphs
 
 main :: IO ()
-main = case runParser abstraction (tokenize "(\\x.(x x))(\\y.y)") of
-    Left err -> putStrLn err
-    Right (ast, _) ->
-        let graphs = map toList (run ast)
-        in mapM_ print graphs
+main = runServer
 
 -- some lambda expression
 -- (\\x.(x x))(\\y.y)
