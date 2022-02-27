@@ -1,4 +1,7 @@
-module GraphReduction (run) where
+module GraphReduction (
+  Graph,
+  run
+  ) where
 
 import Control.Monad.Trans.Reader
 import Control.Monad.Trans.State
@@ -10,7 +13,7 @@ data Node
   = VarNode String
   | LamNode String Int
   | AppNode Int Int
-  deriving (Show)
+  deriving (Show, Eq)
 
 type Graph = Seq Node
 
