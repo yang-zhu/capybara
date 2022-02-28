@@ -9,7 +9,7 @@ executable app
   main-is:
     Main.hs
   hs-source-dirs:
-    src
+    frontend, backend
   other-modules:
     GraphReduction, Lexer, Parser
   build-depends:
@@ -20,4 +20,4 @@ executable app
   default-language:
      Haskell2010
   default-extensions:
-     InstanceSigs
+     InstanceSigs, OverloadedStrings
