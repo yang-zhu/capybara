@@ -7,7 +7,7 @@ import GraphReduction
 
 data Model = Model
   { input :: MisoString
-  , output :: Either String [Graph]
+  , output :: Either String (Int, [Graph])
   }
   deriving (Eq)
 

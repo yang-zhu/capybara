@@ -1,4 +1,5 @@
 module GraphReduction (
+  Node(..),
   Graph,
   run
   ) where
@@ -101,8 +102,8 @@ reduce root graph =
         else [graph]
 
 -- run the reduction
-run :: Expression -> [Graph]
+run :: Expression -> (Int, [Graph])
 run expr =
   let renamedExpr = runReader (renameFreeVars expr) []
       (root, graph) = runState (astToGraph renamedExpr) Seq.empty
-   in reduce root graph
+   in (root, reduce root graph)

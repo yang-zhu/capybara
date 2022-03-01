@@ -10,8 +10,6 @@ executable app
     Main.hs
   hs-source-dirs:
     frontend, backend
-  other-modules:
-    GraphReduction, Lexer, Parser
   build-depends:
     base, miso, containers, transformers, text
   if !impl(ghcjs)
