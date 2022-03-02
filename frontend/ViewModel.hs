@@ -15,7 +15,7 @@ type Depth = Int
 type XCoord = Double
 
 header :: View Action
-header = h1_ [] [text "Capy-Lambda" ]
+header = h1_ [] [text "Capybara - chilled evaluation" ]
 
 formButtons :: View Action
 formButtons = div_ [class_ "btn-group"] [
@@ -24,7 +24,7 @@ formButtons = div_ [class_ "btn-group"] [
   ]
 
 form :: Model -> View Action
-form Model{input} = div_ [class_ "form"] [
+form Model{input} = div_ [Miso.id_ "form"] [
   input_ [type_ "text", class_ "form-control", placeholder_ "(\\x.x) y", value_ input, onInput TextInput],
   formButtons
   ]
@@ -62,24 +62,24 @@ layout (root, graph) xcoords leftEdge
 
 draw :: (Int, Graph) -> Seq Depth -> Seq XCoord -> [View Action]
 draw (root, graph) depths xcoords = case Seq.index graph root of
-  VarNode v -> [text_ [x_ (ms rootX), y_ (ms rootY),fill_ "black"] [text (ms v)]]
+  VarNode v -> [text_ [textAnchor_ "middle", x_ (ms rootX), y_ (ms rootY),fill_ "black"] [text (ms v)]]
   LamNode v e -> let
-    eX = 50 + Seq.index xcoords e
+    eX = 10 * Seq.index xcoords e
     eY = 50 * Seq.index depths e
-    in [ text_ [x_ (ms rootX), y_ (ms rootY)] [text ("\\"<> ms v)]
-       , line_ [x1_ (ms rootX), x2_ (ms eX), y1_ (ms rootY), y2_ (ms eY), stroke_ "black", strokeWidth_ "1"] []
+    in [ text_ [dominantBaseline_ "auto", textAnchor_ "middle", x_ (ms rootX), y_ (ms rootY)] [text ("λ"<> ms v)]
+       , line_ [x1_ (ms rootX), x2_ (ms eX), y1_ (ms (rootY+5)), y2_ (ms (eY-15)), stroke_ "black", strokeWidth_ "1.5"] []
        ] ++ draw (e, graph) depths xcoords
   AppNode e1 e2 -> let
-    e1X = 50 + Seq.index xcoords e1
-    e1Y = 50 * Seq.index depths root
-    e2X = 50 + Seq.index xcoords e2
-    e2Y = 50 * Seq.index depths root
-    in [ text_ [x_ (ms rootX), y_ (ms rootY)] [text "@"]
-        , path_ [d_ ("M " <> ms rootX <> " " <> ms rootY <> "Q " <> ms (rootX-10) <> ms (rootY+10) <> ms e1X <> ms e1Y), stroke_ "black", strokeWidth_ "1"] []
-        , path_ [d_ ("M " <> ms rootX <> " " <> ms rootY <> "Q " <> ms (rootX+10) <> ms (rootY+10) <> ms e2X <> ms e2Y), stroke_ "black", strokeWidth_ "1"] []
+    e1X = 10 * Seq.index xcoords e1
+    e1Y = 50 * Seq.index depths e1
+    e2X = 10 * Seq.index xcoords e2
+    e2Y = 50 * Seq.index depths e2
+    in [ text_ [dominantBaseline_ "auto", textAnchor_ "middle", x_ (ms rootX), y_ (ms rootY)] [text "@"]
+        , path_ [d_ ("M " <> ms (rootX-5) <> " " <> ms (rootY+5) <> "Q " <> ms (rootX-10) <> " " <> ms (rootY+10) <> " " <> ms e1X <> " " <> ms (e1Y-15)), fill_ "transparent", stroke_ "black", strokeWidth_ "1.5"] []
+        , path_ [d_ ("M " <> ms (rootX+5) <> " " <> ms (rootY+5) <> "Q " <> ms (rootX+10) <> " " <> ms (rootY+10) <> " " <> ms e2X <> " " <> ms (e2Y-15)), fill_ "transparent", stroke_ "black", strokeWidth_ "1.5"] []
         ] ++ draw (e1, graph) depths xcoords ++ draw (e2, graph) depths xcoords
   where
-    rootX = 50 + Seq.index xcoords root
+    rootX = 10 * Seq.index xcoords root
     rootY = 50 * Seq.index depths root
 
 renderGraph :: Either String (Int, [Graph]) -> Int -> View Action
@@ -87,28 +87,31 @@ renderGraph (Right (root, graphs)) index = let
   graph = graphs !! index
   depths = computeDepths (root, graph) (Seq.replicate (Seq.length graph) (-1)) 0
   (_, _, xcoords) = layout (root, graph) (Seq.replicate (Seq.length graph) (-1)) 0
-  in svg_ [Miso.Svg.width_ "1000", Miso.Svg.height_ "1000", viewBox_ "0 0 950 950"] (draw (root, graph) depths xcoords) 
+  in svg_ [Miso.Svg.width_ "1000", Miso.Svg.height_ "1000", viewBox_ "-30 -30 400 400"] (draw (root, graph) depths xcoords) 
 renderGraph (Left err) _ = text (ms err)
 
-gridSlider :: View Action
-gridSlider = div_ [] [input_ [type_ "range", orient_ "vertical"]]
-
-gridButtons :: View Action
-gridButtons = div_ [class_ "btn-group-vertical"] [
-  button_ [type_ "button", class_ "btn btn-outline-primary", onClick Prev] [text "prev"],
-  button_ [type_ "button", class_ "btn btn-outline-primary", onClick Next] [text "next"]
+graphButtons :: View Action
+graphButtons = div_ [Miso.id_ "graph-buttons"] 
+  [ div_ [class_ "btn-group"]
+      [ button_ [type_ "button", class_ "btn btn-outline-primary", onClick Prev] [text "◀"]
+      , button_ [type_ "button", class_ "btn btn-outline-primary", onClick Next] [text "▶"]
+      ]
   ]
 
-gridGraph :: Model -> View Action
-gridGraph Model{output, graphIndex} = div_ [class_ "grid-container"]
-  [ gridSlider
-  , renderGraph output graphIndex
-  , gridButtons
+graphView :: Model -> View Action
+graphView Model{output, graphIndex} = div_ []
+  [ renderGraph output graphIndex
+  ]
+
+controlBar :: Model -> View Action
+controlBar m = div_ [Miso.id_ "control-bar"]
+  [ form m
+  , graphButtons
   ]
 
 viewModel :: Model -> View Action
 viewModel m@(Model input output index) = div_ []
   [ header
-  , form m
-  , gridGraph m
+  , controlBar m
+  , graphView m
   ]

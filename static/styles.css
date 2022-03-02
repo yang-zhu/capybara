@@ -1,5 +1,12 @@
+@import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Brygada+1918&display=swap');
+
 body {
   margin: 10px;
+}
+
+h1 {
+  font-family: "Quicksand", sans-serif;
 }
 
 button {
@@ -7,13 +14,26 @@ button {
   margin: 3px;
 }
 
-.form {
+svg text {
+  font-family: "Brygada 1918", serif;
+}
+
+#form {
   display: flex;
   flex-direction: row;
   margin: 10px;
 }
 
-.grid-container {
-  display: grid;
-  grid-template: auto / 10fr 80fr 10fr;
+#graph-buttons {
+  display: flex;
+  justify-content: center;
+}
+
+#graph-buttons .btn {
+  padding: 0.1rem 0.75rem;
+}
+
+#control-bar {
+  position: sticky;
+  top: 5px;
 }
