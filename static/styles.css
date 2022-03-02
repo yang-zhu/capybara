@@ -1,0 +1,19 @@
+body {
+  margin: 10px;
+}
+
+button {
+  padding: 3px 2px;
+  margin: 3px;
+}
+
+.form {
+  display: flex;
+  flex-direction: row;
+  margin: 10px;
+}
+
+.grid-container {
+  display: grid;
+  grid-template: auto / 10fr 80fr 10fr;
+}
