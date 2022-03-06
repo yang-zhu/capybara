@@ -1,6 +1,7 @@
 module GraphReduction (
   Node(..),
   Graph,
+  EvalStrategy(..),
   run
   ) where
 
@@ -9,6 +10,7 @@ import Control.Monad.Trans.State
 import Data.Sequence (Seq, (|>))
 import qualified Data.Sequence as Seq
 import Parser
+import Control.Monad.Trans.Class (lift)
 
 data Node
   = VarNode String
@@ -17,6 +19,12 @@ data Node
   deriving (Show, Eq)
 
 type Graph = Seq Node
+
+data EvalStrategy
+  = CallByName
+  | CallByValue
+  | CallByNeed
+  deriving Eq
 
 -- mark free variables with a $-symbol at the beginning to distinguish them from bound variables
 renameFreeVars :: Expression -> Reader [String] Expression
@@ -33,6 +41,11 @@ addNode node = do
   modify (|> node)
   graph <- get
   return (Seq.length graph - 1)
+
+getNode :: Int -> State Graph Node
+getNode index = do
+  graph <- get
+  return (Seq.index graph index)
 
 -- convert the parse tree to a graph
 astToGraph :: Expression -> State Graph Int
@@ -59,51 +72,88 @@ ifParamInBody param body = do
       res2 <- ifParamInBody param e2
       return $ res1 || res2
 
-instantiate :: String -> Int -> Int -> State Graph Int
+copy :: Int -> State Graph Int
+copy index = do
+  node <- getNode index
+  copyNode node
+
+copyNode :: Node -> State Graph Int
+copyNode node@(VarNode v) = addNode node
+copyNode (LamNode v e) = do
+  e' <- copy e
+  addNode (LamNode v e')
+copyNode (AppNode e1 e2) = do
+  e1' <- copy e1
+  e2' <- copy e2
+  addNode (AppNode e1' e2')
+
+instantiate :: String -> Int -> Int -> ReaderT EvalStrategy (State Graph) Int
 instantiate param body arg = do
-  graph <- get
+  strat <- ask
+  graph <- lift get
   let paramInBody = runReader (ifParamInBody param body) graph
   if paramInBody
-    then case Seq.index graph body of
+    then lift (getNode body) >>= \case
       VarNode v
-        | v == param -> return arg
+        | v == param -> if strat == CallByNeed then return arg else lift (copy arg)
         | otherwise -> return body
       LamNode v e
         | v == param -> return body
         | otherwise -> do
-          e' <- instantiate param e arg
-          addNode (LamNode v e')
+            e' <- instantiate param e arg
+            lift $ addNode (LamNode v e')
       AppNode e1 e2 -> do
         e1' <- instantiate param e1 arg
         e2' <- instantiate param e2 arg
-        addNode (AppNode e1' e2')
+        lift $ addNode (AppNode e1' e2')
     else return body
 
 -- search for redex in an expression and do one reduction
-redex :: Int -> State Graph Bool
-redex root = do
-  graph <- get
-  case Seq.index graph root of
-    AppNode e1 e2 -> case Seq.index graph e1 of
-      LamNode param body -> do
-        inst <- instantiate param body e2
-        graph' <- get
-        modify (Seq.update root (Seq.index graph' inst))
-        return True
-      _ -> redex e1
-    _ -> return False
+redex :: EvalStrategy -> Int -> State Graph Bool
+redex strat root = 
+  if strat == CallByName || strat == CallByNeed
+    then do
+      rootNode <- getNode root
+      case rootNode of
+        AppNode e1 e2 -> getNode e1 >>= \case
+          LamNode param body -> do
+            inst <- runReaderT (instantiate param body e2) strat
+            graph <- get
+            modify (Seq.update root (Seq.index graph inst))
+            return True
+          _ -> redex strat e1
+        _ -> return False
+    else do
+      rootNode <- getNode root
+      case rootNode of
+        AppNode e1 e2 -> getNode e1 >>= \case
+          LamNode param body -> do
+            e2IsValue <- isValue <$> getNode e2
+            if e2IsValue
+              then do
+                inst <- runReaderT (instantiate param body e2) strat
+                graph <- get
+                modify (Seq.update root (Seq.index graph inst))
+                return True
+              else redex strat e2
+          _ -> redex strat e1
+        _ -> return False            
+  where
+    isValue :: Node -> Bool
+    isValue (AppNode _ _) = False
+    isValue _ = True
 
 -- reduce the complete graph
-reduce :: Int -> Graph -> [Graph]
-reduce root graph =
-  let (reduced, graph') = runState (redex root) graph
+reduce :: EvalStrategy -> Int -> Graph -> [Graph]
+reduce strat root graph =
+  let (reduced, graph') = runState (redex strat root) graph
    in if reduced
-        then graph : reduce root graph'
+        then graph : reduce strat root graph'
         else [graph]
 
 -- run the reduction
-run :: Expression -> (Int, [Graph])
-run expr =
+run :: EvalStrategy -> Expression -> (Int, [Graph])
+run strat expr =
   let renamedExpr = runReader (renameFreeVars expr) []
       (root, graph) = runState (astToGraph renamedExpr) Seq.empty
-   in (root, reduce root graph)
+   in (root, reduce strat root graph)

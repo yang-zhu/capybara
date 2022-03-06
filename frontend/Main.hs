@@ -9,10 +9,7 @@ import Miso.String
 -- | JSAddle import
 #ifndef __GHCJS__
 import           Language.Javascript.JSaddle.Warp as JSaddle
-import qualified Network.Wai.Handler.Warp         as Warp
-import qualified Network.Wai as Wai
 import           Network.Wai.Application.Static
-import           Network.WebSockets
 #endif
 import           Control.Monad.IO.Class
 
@@ -22,7 +19,7 @@ import ViewModel
 
 #ifndef __GHCJS__
 runApp :: JSM () -> IO ()
-runApp f = JSaddle.debugOr 3302 (f >> syncPoint) JSaddle.jsaddleApp
+runApp f = JSaddle.debugOr 3302 (f >> syncPoint) (staticApp (defaultWebAppSettings "static"))
 #else
 runApp :: IO () -> IO ()
 runApp app = app

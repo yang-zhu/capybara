@@ -14,8 +14,8 @@ executable app
     base, miso, containers, transformers, text
   if !impl(ghcjs)
     build-depends:
-       jsaddle, jsaddle-warp, transformers, warp, websockets, wai, wai-app-static
+       jsaddle, jsaddle-warp, transformers, wai-app-static
   default-language:
      Haskell2010
   default-extensions:
-     InstanceSigs, OverloadedStrings, NamedFieldPuns
+     InstanceSigs, OverloadedStrings, NamedFieldPuns, LambdaCase
