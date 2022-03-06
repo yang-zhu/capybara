@@ -24,7 +24,7 @@ data EvalStrategy
   = CallByName
   | CallByValue
   | CallByNeed
-  deriving Eq
+  deriving (Show, Eq)
 
 -- mark free variables with a $-symbol at the beginning to distinguish them from bound variables
 renameFreeVars :: Expression -> Reader [String] Expression

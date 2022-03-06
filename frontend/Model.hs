@@ -7,6 +7,7 @@ import GraphReduction
 
 data Model = Model
   { input :: MisoString
+  , strategy :: EvalStrategy
   , output :: Either String (Int, [Graph])
   , graphIndex :: Int
   }
@@ -14,8 +15,11 @@ data Model = Model
 
 data Action
   = Eval
-  | Clear
   | TextInput MisoString
+  | CBNeed
+  | CBName
+  | CBValue
+  | Clear
   | Next
   | Prev
   | NoOp
@@ -24,6 +28,7 @@ data Action
 initialModel :: Model
 initialModel = Model
   { input = ""
+  , strategy = CallByNeed
   , output = Left ""
   , graphIndex = 0
   }
