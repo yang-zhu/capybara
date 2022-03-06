@@ -9,6 +9,12 @@ h1 {
   font-family: "Quicksand", sans-serif;
 }
 
+img {
+  width: 3em;
+  margin-right: 0.5em;
+  padding-bottom: 0.5em;
+}
+
 button {
   margin: 3px 0px;
   white-space: nowrap;

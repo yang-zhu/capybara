@@ -15,7 +15,9 @@ type Depth = Int
 type XCoord = Double
 
 header :: View Action
-header = h1_ [] [text "Capybara - chilled evaluation" ]
+header = h1_ []
+  [ img_ [src_ "logo.svg", alt_ "logo-handdrawn capybara"]
+  , text "Capybara - chilled evaluation" ]
 
 formButtons :: [View Action]
 formButtons =
