@@ -47,6 +47,11 @@ getNode index = do
   graph <- get
   return (Seq.index graph index)
 
+updateNode :: Int -> Int -> State Graph ()
+updateNode old new = do
+  graph <- get
+  modify (Seq.update old (Seq.index graph new))
+
 -- convert the parse tree to a graph
 astToGraph :: Expression -> State Graph Int
 astToGraph (Var v) = addNode (VarNode v)
@@ -109,35 +114,22 @@ instantiate param body arg = do
     else return body
 
 -- search for redex in an expression and do one reduction
-redex :: EvalStrategy -> Int -> State Graph Bool
-redex strat root = 
-  if strat == CallByName || strat == CallByNeed
-    then do
-      rootNode <- getNode root
-      case rootNode of
-        AppNode e1 e2 -> getNode e1 >>= \case
-          LamNode param body -> do
-            inst <- runReaderT (instantiate param body e2) strat
-            graph <- get
-            modify (Seq.update root (Seq.index graph inst))
-            return True
-          _ -> redex strat e1
-        _ -> return False
-    else do
-      rootNode <- getNode root
-      case rootNode of
-        AppNode e1 e2 -> getNode e1 >>= \case
-          LamNode param body -> do
-            e2IsValue <- isValue <$> getNode e2
-            if e2IsValue
-              then do
-                inst <- runReaderT (instantiate param body e2) strat
-                graph <- get
-                modify (Seq.update root (Seq.index graph inst))
-                return True
-              else redex strat e2
-          _ -> redex strat e1
-        _ -> return False            
+redex :: Int -> ReaderT EvalStrategy (State Graph) Bool
+redex root = do
+  strat <- ask
+  rootNode <- lift (getNode root)
+  case rootNode of
+    AppNode e1 e2 -> lift (getNode e1) >>= \case
+      LamNode param body -> do
+        e2IsValue <- isValue <$> lift (getNode e2)
+        if strat == CallByName || strat == CallByNeed || (strat == CallByValue && e2IsValue)
+        then do
+          inst <- instantiate param body e2
+          lift $ updateNode root inst
+          return True
+        else redex e2
+      _ -> redex e1
+    _ -> return False
   where
     isValue :: Node -> Bool
     isValue (AppNode _ _) = False
@@ -146,7 +138,7 @@ redex strat root =
 -- reduce the complete graph
 reduce :: EvalStrategy -> Int -> Graph -> [Graph]
 reduce strat root graph =
-  let (reduced, graph') = runState (redex strat root) graph
+  let (reduced, graph') = runState (runReaderT (redex root) strat) graph
    in if reduced
         then graph : reduce strat root graph'
         else [graph]
