@@ -27,8 +27,17 @@ svg text {
 #form {
   display: flex;
   flex-direction: row;
+  align-items: baseline;
   margin: 10px;
   gap: 5px;
+}
+
+#input-area {
+  flex-grow: 1;
+}
+
+input.form-control {
+  padding: 10px;
 }
 
 #graph-buttons {

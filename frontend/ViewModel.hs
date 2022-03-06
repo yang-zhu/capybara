@@ -36,9 +36,16 @@ formButtons =
   , button_ [type_ "button", class_ "btn btn-secondary", onClick Clear] [text "clear"]
   ]
 
+inputArea :: Model -> View Action
+inputArea Model{input, output=Left err}
+ | err /= "" = div_ [Miso.id_ "input-area"]
+    [ input_ [type_ "text", class_ "form-control is-invalid", placeholder_ "(\\x.x) y", value_ input, onInput TextInput]
+    , div_ [class_ "invalid-feedback"] [text (ms err)]
+    ]
+inputArea Model{input} = input_ [type_ "text", class_ "form-control", placeholder_ "(\\x.x) y", value_ input, onInput TextInput]
+
 form :: Model -> View Action
-form Model{input} = div_ [Miso.id_ "form"]
-  (input_ [type_ "text", class_ "form-control", placeholder_ "(\\x.x) y", value_ input, onInput TextInput] : formButtons)
+form m = div_ [Miso.id_ "form"] (inputArea m : formButtons)
 
 computeDepths :: (Int, Graph) -> Seq Depth -> Depth -> Seq Depth
 computeDepths (root, graph) depths currDepth
@@ -95,7 +102,7 @@ renderGraph (Right (root, graphs)) index = let
   depths = computeDepths (root, graph) (Seq.replicate (Seq.length graph) (-1)) 0
   (_, _, xcoords) = layout (root, graph) (Seq.replicate (Seq.length graph) (-1)) 0
   in svg_ [Miso.Svg.width_ "1000", Miso.Svg.height_ "1000", viewBox_ "-30 -30 400 400"] (draw (root, graph) depths xcoords) 
-renderGraph (Left err) _ = text (ms err)
+renderGraph (Left err) _ = text ""
 
 graphButtons :: View Action
 graphButtons = div_ [Miso.id_ "graph-buttons"] 
