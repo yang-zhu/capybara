@@ -17,28 +17,26 @@ type XCoord = Double
 header :: View Action
 header = h1_ [] [text "Capybara - chilled evaluation" ]
 
-formButtons :: View Action
-formButtons = div_ [class_ "btn-group"]
+formButtons :: [View Action]
+formButtons =
   [ div_ [class_ "btn-group"]
-    [ button_ [type_ "button", class_ "btn btn-success", onClick Eval] [text "evaluate"]
-    , button_ [type_ "button", class_ "btn btn-success dropdown-toggle dropdown-toggle-split", textProp "data-bs-toggle" "dropdown", textProp "aria-expanded" "false"] [span_ [class_ "visually-hidden"] [text "Toggle Dropdown"]]
-    , ul_ [class_ "dropdown-menu"]
-      [ li_ []
-        [Miso.a_ [class_"dropdown-item", href_ "#", onClick CBNeed] [text "call-by-need"]]
-      , li_ []
-        [Miso.a_ [class_"dropdown-item", href_ "#", onClick CBName] [text "call-by-name"]]
-      , li_ []
-        [Miso.a_ [class_"dropdown-item", href_ "#", onClick CBValue] [text "call-by-value"]]
+      [ button_ [type_ "button", class_ "btn btn-success", onClick Eval] [text "evaluate"]
+      , button_ [type_ "button", class_ "btn btn-success dropdown-toggle dropdown-toggle-split", textProp "data-bs-toggle" "dropdown", textProp "aria-expanded" "false"] [span_ [class_ "visually-hidden"] [text "Toggle Dropdown"]]
+      , ul_ [class_ "dropdown-menu"]
+        [ li_ []
+          [Miso.a_ [class_"dropdown-item", href_ "#", onClick CBNeed] [text "call-by-need"]]
+        , li_ []
+          [Miso.a_ [class_"dropdown-item", href_ "#", onClick CBName] [text "call-by-name"]]
+        , li_ []
+          [Miso.a_ [class_"dropdown-item", href_ "#", onClick CBValue] [text "call-by-value"]]
+        ]
       ]
-    ]
   , button_ [type_ "button", class_ "btn btn-secondary", onClick Clear] [text "clear"]
   ]
 
 form :: Model -> View Action
-form Model{input} = div_ [Miso.id_ "form"] [
-  input_ [type_ "text", class_ "form-control", placeholder_ "(\\x.x) y", value_ input, onInput TextInput],
-  formButtons
-  ]
+form Model{input} = div_ [Miso.id_ "form"]
+  (input_ [type_ "text", class_ "form-control", placeholder_ "(\\x.x) y", value_ input, onInput TextInput] : formButtons)
 
 computeDepths :: (Int, Graph) -> Seq Depth -> Depth -> Seq Depth
 computeDepths (root, graph) depths currDepth

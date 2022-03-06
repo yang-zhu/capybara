@@ -9,10 +9,10 @@ h1 {
   font-family: "Quicksand", sans-serif;
 }
 
-/* button {
-  padding: 3px 2px;
-  margin: 3px;
-} */
+button {
+  margin: 3px 0px;
+  white-space: nowrap;
+}
 
 svg text {
   font-family: "Brygada 1918", serif;
@@ -22,6 +22,7 @@ svg text {
   display: flex;
   flex-direction: row;
   margin: 10px;
+  gap: 5px;
 }
 
 #graph-buttons {
