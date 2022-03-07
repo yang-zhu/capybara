@@ -36,13 +36,20 @@ formButtons =
   , button_ [type_ "button", class_ "btn btn-secondary", onClick Clear] [text "clear"]
   ]
 
+onEnter :: Action -> Attribute Action
+onEnter act = onKeyDown (hitEnter act)
+  where
+    hitEnter :: Action -> KeyCode -> Action
+    hitEnter act (KeyCode 13) = act
+    hitEnter _ _ = NoOp
+
 inputArea :: Model -> View Action
 inputArea Model{input, output=Left err}
  | err /= "" = div_ [Miso.id_ "input-area"]
-    [ input_ [type_ "text", class_ "form-control is-invalid", placeholder_ "(\\x.x) y", value_ input, onInput TextInput]
+    [ input_ [type_ "text", class_ "form-control is-invalid", placeholder_ "(\\x.x) y", value_ input, onInput TextInput, onEnter Eval, autofocus_ True]
     , div_ [class_ "invalid-feedback"] [text (ms err)]
     ]
-inputArea Model{input} = input_ [type_ "text", class_ "form-control", placeholder_ "(\\x.x) y", value_ input, onInput TextInput]
+inputArea Model{input} = input_ [type_ "text", class_ "form-control", placeholder_ "(\\x.x) y", value_ input, onInput TextInput, onEnter Eval, autofocus_ True]
 
 form :: Model -> View Action
 form m = div_ [Miso.id_ "form"] (inputArea m : formButtons)
@@ -104,13 +111,14 @@ renderGraph (Right (root, graphs)) index = let
   in svg_ [Miso.Svg.width_ "1000", Miso.Svg.height_ "1000", viewBox_ "-30 -30 400 400"] (draw (root, graph) depths xcoords) 
 renderGraph (Left err) _ = text ""
 
-graphButtons :: View Action
-graphButtons = div_ [Miso.id_ "graph-buttons"] 
+graphButtons :: Model -> View Action
+graphButtons Model{output=Right _} = div_ [Miso.id_ "graph-buttons"] 
   [ div_ [class_ "btn-group"]
       [ button_ [type_ "button", class_ "btn btn-outline-primary", onClick Prev] [text "◀"]
       , button_ [type_ "button", class_ "btn btn-outline-primary", onClick Next] [text "▶"]
       ]
   ]
+graphButtons m = text ""
 
 graphView :: Model -> View Action
 graphView Model{output, graphIndex} = div_ []
@@ -120,7 +128,7 @@ graphView Model{output, graphIndex} = div_ []
 controlBar :: Model -> View Action
 controlBar m = div_ [Miso.id_ "control-bar"]
   [ form m
-  , graphButtons
+  , graphButtons m
   ]
 
 viewModel :: Model -> View Action

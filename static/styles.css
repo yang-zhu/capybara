@@ -27,7 +27,7 @@ svg text {
 #form {
   display: flex;
   flex-direction: row;
-  align-items: baseline;
+  align-items: flex-start;
   margin: 10px;
   gap: 5px;
 }
