@@ -8,7 +8,7 @@ import GraphReduction
 data Model = Model
   { input :: MisoString
   , strategy :: EvalStrategy
-  , output :: Either String (Int, [Graph])
+  , output :: Either String (Int, [(Graph, Maybe Int)])
   , graphIndex :: Int
   }
   deriving (Eq)

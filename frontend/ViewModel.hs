@@ -70,7 +70,7 @@ computeDepths (root, graph) depths currDepth
 layout :: (Int, Graph) -> Seq XCoord -> XCoord -> (XCoord, XCoord, Seq XCoord)
 layout (root, graph) xcoords leftEdge
   | Seq.index xcoords root == -1 = case Seq.index graph root of
-      VarNode v -> (leftEdge+4, leftEdge+2, Seq.update root (leftEdge+2) xcoords)
+      VarNode v -> (leftEdge+4, leftEdge+2, Seq.update root (leftEdge+2) xcoords)  -- (right edge, root, xcoords)
       LamNode v e -> let
         (eRightEdge, eRoot, xcoords') = layout (e, graph) xcoords leftEdge
         in (eRightEdge, eRoot, Seq.update root eRoot xcoords')
@@ -81,34 +81,50 @@ layout (root, graph) xcoords leftEdge
         in (e2RightEdge, rootXCoord, Seq.update root rootXCoord xcoords'')
   | otherwise = (leftEdge, leftEdge, xcoords)
 
-draw :: (Int, Graph) -> Seq Depth -> Seq XCoord -> [View Action]
-draw (root, graph) depths xcoords = case Seq.index graph root of
+draw :: (Int, (Graph, Maybe Int)) -> Seq Depth -> Seq XCoord -> [View Action]
+draw (root, (graph, redex)) depths xcoords = case Seq.index graph root of
   VarNode v -> [text_ [textAnchor_ "middle", x_ (ms rootX), y_ (ms rootY),fill_ "black"] [text (ms v)]]
   LamNode v e -> let
     eX = 10 * Seq.index xcoords e
     eY = 50 * Seq.index depths e
     in [ text_ [dominantBaseline_ "auto", textAnchor_ "middle", x_ (ms rootX), y_ (ms rootY)] [text ("λ"<> ms v)]
        , line_ [x1_ (ms rootX), x2_ (ms eX), y1_ (ms (rootY+5)), y2_ (ms (eY-15)), stroke_ "black", strokeWidth_ "1.5"] []
-       ] ++ draw (e, graph) depths xcoords
+       ] ++ draw (e, (graph, redex)) depths xcoords
   AppNode e1 e2 -> let
     e1X = 10 * Seq.index xcoords e1
     e1Y = 50 * Seq.index depths e1
     e2X = 10 * Seq.index xcoords e2
     e2Y = 50 * Seq.index depths e2
-    in [ text_ [dominantBaseline_ "auto", textAnchor_ "middle", x_ (ms rootX), y_ (ms rootY)] [text "@"]
+    in [ text_ 
+          [ dominantBaseline_ "auto"
+          , textAnchor_ "middle"
+          , x_ (ms rootX)
+          , y_ (ms rootY)
+          , if Just root == redex then fontWeight_ "bolder" else fontWeight_ "normal"
+          , if Just root == redex then fill_ "#0d6efd" else fill_ "black"]
+          [text "@"]
         , path_ [d_ ("M " <> ms (rootX-5) <> " " <> ms (rootY+5) <> "Q " <> ms (rootX-10) <> " " <> ms (rootY+10) <> " " <> ms e1X <> " " <> ms (e1Y-15)), fill_ "transparent", stroke_ "black", strokeWidth_ "1.5"] []
         , path_ [d_ ("M " <> ms (rootX+5) <> " " <> ms (rootY+5) <> "Q " <> ms (rootX+10) <> " " <> ms (rootY+10) <> " " <> ms e2X <> " " <> ms (e2Y-15)), fill_ "transparent", stroke_ "black", strokeWidth_ "1.5"] []
-        ] ++ draw (e1, graph) depths xcoords ++ draw (e2, graph) depths xcoords
+        ] ++ draw (e1, (graph, redex)) depths xcoords ++ draw (e2, (graph, redex)) depths xcoords
   where
     rootX = 10 * Seq.index xcoords root
     rootY = 50 * Seq.index depths root
 
-renderGraph :: Either String (Int, [Graph]) -> Int -> View Action
+-- markRedex :: Maybe Int -> Seq Depth -> Seq XCoord -> View Action
+-- markRedex (Just idx) depths xcoords = let
+--   rectX = 10 * Seq.index xcoords idx
+--   rectY = 50 * Seq.index depths idx - 4
+--   in circle_ [cx_ (ms rectX), cy_ (ms rectY), r_ "10", fill_ "orange", stroke_ "transparent"] []
+-- markRedex Nothing _ _ = text ""
+
+renderGraph :: Either String (Int, [(Graph, Maybe Int)]) -> Int -> View Action
 renderGraph (Right (root, graphs)) index = let
-  graph = graphs !! index
+  (graph, redex) = graphs !! index
   depths = computeDepths (root, graph) (Seq.replicate (Seq.length graph) (-1)) 0
   (_, _, xcoords) = layout (root, graph) (Seq.replicate (Seq.length graph) (-1)) 0
-  in svg_ [Miso.Svg.width_ "1000", Miso.Svg.height_ "1000", viewBox_ "-30 -30 400 400"] (draw (root, graph) depths xcoords) 
+  in svg_ [Miso.Svg.width_ "1000", Miso.Svg.height_ "1000", viewBox_ "-30 -30 400 400"]
+          -- (markRedex redex depths xcoords: draw (root, graph) depths xcoords)
+          (draw (root, (graph, redex)) depths xcoords)
 renderGraph (Left err) _ = text ""
 
 graphButtons :: Model -> View Action

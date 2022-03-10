@@ -14,10 +14,6 @@ runBackend m@Model{input, strategy, output} = case runParser abstraction (tokeni
   Left err -> m{output=Left err}
   Right (ast, _) -> m{output=Right (GR.run strategy ast)}
 
--- runBackend (Model input strat output index) = case runParser abstraction (tokenize (fromMisoString input)) of
---   Left err -> Model input strat (Left err) index
---   Right (ast, _) -> Model input strat (Right (GR.run strat ast)) index
-
 updateModel :: Action -> Model -> Effect Action Model
 updateModel Eval m = noEff (runBackend m)
 updateModel (TextInput input) m = noEff (m{input=input})

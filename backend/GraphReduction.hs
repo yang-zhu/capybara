@@ -114,8 +114,8 @@ instantiate param body arg = do
     else return body
 
 -- search for redex in an expression and do one reduction
-redex :: Int -> ReaderT EvalStrategy (State Graph) Bool
-redex root = do
+oneStepReduce :: Int -> ReaderT EvalStrategy (State Graph) (Bool, Maybe Int)
+oneStepReduce root = do
   strat <- ask
   rootNode <- lift (getNode root)
   case rootNode of
@@ -126,25 +126,25 @@ redex root = do
         then do
           inst <- instantiate param body e2
           lift $ updateNode root inst
-          return True
-        else redex e2
-      _ -> redex e1
-    _ -> return False
+          return (True, Just root)
+        else oneStepReduce e2
+      _ -> oneStepReduce e1
+    _ -> return (False, Nothing)
   where
     isValue :: Node -> Bool
     isValue (AppNode _ _) = False
     isValue _ = True
 
 -- reduce the complete graph
-reduce :: EvalStrategy -> Int -> Graph -> [Graph]
-reduce strat root graph =
-  let (reduced, graph') = runState (runReaderT (redex root) strat) graph
+reduce :: EvalStrategy -> Int -> Graph -> [(Graph, Maybe Int)]
+reduce strat root graph = let
+   ((reduced, redex), graph') = runState (runReaderT (oneStepReduce root) strat) graph
    in if reduced
-        then graph : reduce strat root graph'
-        else [graph]
+        then (graph, redex) : reduce strat root graph'
+        else [(graph, redex)]
 
 -- run the reduction
-run :: EvalStrategy -> Expression -> (Int, [Graph])
+run :: EvalStrategy -> Expression -> (Int, [(Graph, Maybe Int)])
 run strat expr =
   let renamedExpr = runReader (renameFreeVars expr) []
       (root, graph) = runState (astToGraph renamedExpr) Seq.empty
