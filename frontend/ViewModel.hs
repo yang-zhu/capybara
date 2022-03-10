@@ -128,10 +128,10 @@ renderGraph (Right (root, graphs)) index = let
 renderGraph (Left err) _ = text ""
 
 graphButtons :: Model -> View Action
-graphButtons Model{output=Right _} = div_ [Miso.id_ "graph-buttons"] 
+graphButtons Model{output=Right (_, graphs), graphIndex=gi} = div_ [Miso.id_ "graph-buttons"] 
   [ div_ [class_ "btn-group"]
-      [ button_ [type_ "button", class_ "btn btn-outline-primary", onClick Prev] [text "◀"]
-      , button_ [type_ "button", class_ "btn btn-outline-primary", onClick Next] [text "▶"]
+      [ button_ [type_ "button", class_ "btn btn-outline-primary", disabled_ (gi == 0), onClick Prev] [text "◀"]
+      , button_ [type_ "button", class_ "btn btn-outline-primary", disabled_ (gi == Prelude.length graphs - 1), onClick Next] [text "▶"]
       ]
   ]
 graphButtons m = text ""

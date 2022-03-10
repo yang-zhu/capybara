@@ -53,3 +53,8 @@ input.form-control {
   position: sticky;
   top: 5px;
 }
+
+.btn:disabled {
+  color: gray;
+  border-color: gray;
+}
