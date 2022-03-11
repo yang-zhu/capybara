@@ -58,3 +58,9 @@ input.form-control {
   color: #6c757d;
   border-color: #6c757d;
 }
+
+#graph {
+  display: flex;
+  justify-content: center;
+  margin: 20px;
+}
