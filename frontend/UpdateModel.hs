@@ -8,6 +8,8 @@ import Parser
 import GraphReduction as GR
 import Model
 
+turnBackslashIntoLambda :: MisoString -> MisoString
+turnBackslashIntoLambda = toMisoString . Prelude.map (\c -> if c =='\\' then 'λ' else c) . fromMisoString
 
 runBackend :: Model -> Model
 runBackend m@Model{input, strategy, output} = case tokenize (fromMisoString input) >>= runParser abstraction of
@@ -16,7 +18,7 @@ runBackend m@Model{input, strategy, output} = case tokenize (fromMisoString inpu
 
 updateModel :: Action -> Model -> Effect Action Model
 updateModel Eval m = noEff (runBackend m)
-updateModel (TextInput input) m = noEff (m{input=input})
+updateModel (TextInput input) m = noEff (m{input=turnBackslashIntoLambda input})
 updateModel CBNeed m = noEff (runBackend m{strategy=CallByNeed})
 updateModel CBName m = noEff (runBackend m{strategy=CallByName})
 updateModel CBValue m = noEff (runBackend m{strategy=CallByValue})

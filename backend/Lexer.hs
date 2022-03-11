@@ -9,10 +9,14 @@ import Data.Char (isAlpha, isAlphaNum, isSpace)
 data Token
   = Variable String
   | Keyword String
-  deriving (Eq, Show)
+  deriving Eq
+
+instance Show Token where
+  show (Variable v) = "variable " ++ v
+  show (Keyword kw) = "'" ++ kw ++ "'"
 
 symbols :: [Char]
-symbols = "\\λ.()"
+symbols = "λ.()"
 
 isIdentifierChar :: Char -> Bool
 isIdentifierChar c = isAlphaNum c || c == '_'
