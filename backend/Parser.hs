@@ -81,7 +81,7 @@ errorMsg msg = Parser $ \_ -> Left msg
 -- parse an abstraction
 abstraction :: Parser Expression
 abstraction = do
-    matchKeyword "\\"
+    matchKeyword "\\" <|> matchKeyword "λ"
     v <- variable
     matchKeyword "."
     e <- abstraction

@@ -55,6 +55,6 @@ input.form-control {
 }
 
 .btn:disabled {
-  color: gray;
-  border-color: gray;
+  color: #6c757d;
+  border-color: #6c757d;
 }

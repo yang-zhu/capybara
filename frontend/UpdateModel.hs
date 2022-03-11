@@ -10,7 +10,7 @@ import Model
 
 
 runBackend :: Model -> Model
-runBackend m@Model{input, strategy, output} = case runParser abstraction (tokenize (fromMisoString input)) of
+runBackend m@Model{input, strategy, output} = case tokenize (fromMisoString input) >>= runParser abstraction of
   Left err -> m{output=Left err}
   Right (ast, _) -> m{output=Right (GR.run strategy ast)}
 
