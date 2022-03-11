@@ -19,22 +19,27 @@ header = h1_ []
   [ img_ [src_ "logo.svg", alt_ "logo-handdrawn capybara"]
   , text "Capybara - chilled evaluation" ]
 
-formButtons :: [View Action]
-formButtons =
+formButtons :: Model -> [View Action]
+formButtons Model{strategy}=
   [ div_ [class_ "btn-group"]
-      [ button_ [type_ "button", class_ "btn btn-success", onClick Eval] [text "evaluate"]
+      [ button_ [type_ "button", class_ "btn btn-success", onClick Eval] [text (stratToStr strategy)]
       , button_ [type_ "button", class_ "btn btn-success dropdown-toggle dropdown-toggle-split", textProp "data-bs-toggle" "dropdown", textProp "aria-expanded" "false"] [span_ [class_ "visually-hidden"] [text "Toggle Dropdown"]]
       , ul_ [class_ "dropdown-menu"]
         [ li_ []
-          [Miso.a_ [class_"dropdown-item", href_ "#", onClick CBNeed] [text "call-by-need"]]
+          [Miso.a_ [class_"dropdown-item", href_ "#", onClick CBNeed] [text (stratToStr CallByNeed)]]
         , li_ []
-          [Miso.a_ [class_"dropdown-item", href_ "#", onClick CBName] [text "call-by-name"]]
+          [Miso.a_ [class_"dropdown-item", href_ "#", onClick CBName] [text (stratToStr CallByName)]]
         , li_ []
-          [Miso.a_ [class_"dropdown-item", href_ "#", onClick CBValue] [text "call-by-value"]]
+          [Miso.a_ [class_"dropdown-item", href_ "#", onClick CBValue] [text (stratToStr CallByValue)]]
         ]
       ]
   , button_ [type_ "button", class_ "btn btn-secondary", onClick Clear] [text "clear"]
   ]
+  where
+    stratToStr :: EvalStrategy -> MisoString
+    stratToStr CallByNeed = "call-by-need"
+    stratToStr CallByName = "call-by-name"
+    stratToStr CallByValue = "call-by-value"
 
 onEnter :: Action -> Attribute Action
 onEnter act = onKeyDown (hitEnter act)
@@ -52,7 +57,7 @@ inputArea Model{input, output=Left err}
 inputArea Model{input} = input_ [type_ "text", class_ "form-control", placeholder_ "(\\x.x) y", value_ input, onInput TextInput, onEnter Eval, autofocus_ True]
 
 form :: Model -> View Action
-form m = div_ [Miso.id_ "form"] (inputArea m : formButtons)
+form m = div_ [Miso.id_ "form"] (inputArea m : formButtons m)
 
 computeDepths :: (Int, Graph) -> Seq Depth -> Depth -> Seq Depth
 computeDepths (root, graph) depths currDepth

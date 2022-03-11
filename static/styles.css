@@ -20,6 +20,11 @@ button {
   white-space: nowrap;
 }
 
+button:focus:not(:focus-visible):not(:active) {
+  outline: 0;
+  box-shadow: none;
+}
+
 svg text {
   font-family: "Brygada 1918", serif;
 }
