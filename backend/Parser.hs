@@ -1,6 +1,6 @@
 module Parser
   ( Expression (..),
-    runParser,
+    parse,
     abstraction,
   )
 where
@@ -26,10 +26,6 @@ data Expression
 type ParseError = String
 
 newtype Parser a = Parser ([Token] -> Either ParseError (a, [Token]))
-
--- strip off the Parser constructor
-runParser :: Parser a -> [Token] -> Either ParseError (a, [Token])
-runParser (Parser p) = p
 
 instance Monad Parser where
   return :: a -> Parser a
@@ -59,6 +55,15 @@ instance Alternative Parser where
   p1 <|> p2 = Parser $ \ts -> case runParser p1 ts of
     Left _ -> runParser p2 ts
     Right res -> Right res
+
+parse :: String -> Either ParseError Expression
+parse input = case tokenize input >>= runParser abstraction of
+  Left err -> Left err
+  Right (ast, rest) -> if null rest then Right ast else Left "parse error"
+
+-- strip off the Parser constructor
+runParser :: Parser a -> [Token] -> Either ParseError (a, [Token])
+runParser (Parser p) = p
 
 -- parse a token
 token :: Parser Token

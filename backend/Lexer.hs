@@ -6,6 +6,8 @@ where
 
 import Data.Char (isAlpha, isAlphaNum, isSpace)
 
+type LexError = String
+
 data Token
   = Variable String
   | Keyword String
@@ -21,7 +23,7 @@ symbols = "λ.()"
 isIdentifierChar :: Char -> Bool
 isIdentifierChar c = isAlphaNum c || c == '_'
 
-tokenize :: String -> Either String [Token]
+tokenize :: String -> Either LexError [Token]
 tokenize [] = return []
 tokenize (c : cs)
   | isSpace c = tokenize cs

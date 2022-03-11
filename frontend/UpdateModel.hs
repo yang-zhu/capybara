@@ -12,9 +12,9 @@ turnBackslashIntoLambda :: MisoString -> MisoString
 turnBackslashIntoLambda = toMisoString . Prelude.map (\c -> if c =='\\' then 'λ' else c) . fromMisoString
 
 runBackend :: Model -> Model
-runBackend m@Model{input, strategy, output} = case tokenize (fromMisoString input) >>= runParser abstraction of
+runBackend m@Model{input, strategy, output} = case Parser.parse (fromMisoString input) of
   Left err -> m{output=Left err}
-  Right (ast, _) -> m{output=Right (GR.run strategy ast)}
+  Right ast -> m{output=Right (GR.run strategy ast)}
 
 updateModel :: Action -> Model -> Effect Action Model
 updateModel Eval m = noEff (runBackend m)
