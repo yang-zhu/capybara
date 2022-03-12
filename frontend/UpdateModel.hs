@@ -2,6 +2,7 @@ module UpdateModel(updateModel) where
 
 import Miso
 import Miso.String
+import Control.Lens.Operators
 
 import Lexer
 import Parser
@@ -12,19 +13,19 @@ turnBackslashIntoLambda :: MisoString -> MisoString
 turnBackslashIntoLambda = toMisoString . Prelude.map (\c -> if c =='\\' then 'λ' else c) . fromMisoString
 
 runBackend :: Model -> Model
-runBackend m@Model{input, strategy, output}
-  | input == "" = m{output=Left ""}
-  | otherwise = case Parser.parse (fromMisoString input) of
-      Left err -> m{output=Left err}
-      Right ast -> m{output=Right (GR.run strategy ast), graphIndex=0}
+runBackend model
+  | model^.input == "" = model & output .~ Left ""
+  | otherwise = case Parser.parse (fromMisoString (model^.input)) of
+      Left err -> model & output .~ Left err
+      Right ast -> model & output .~ Right (GR.run (model^.strategy) ast) & graphIndex .~ 0
 
 updateModel :: Action -> Model -> Effect Action Model
-updateModel Eval m = noEff (runBackend m)
-updateModel (TextInput input) m = noEff (m{input=turnBackslashIntoLambda input})
-updateModel CBNeed m = noEff (runBackend m{strategy=CallByNeed})
-updateModel CBName m = noEff (runBackend m{strategy=CallByName})
-updateModel CBValue m = noEff (runBackend m{strategy=CallByValue})
-updateModel Clear m = noEff m{input="", output=Left ""}
-updateModel Next m@Model{graphIndex} = noEff m{graphIndex=graphIndex+1}
-updateModel Prev m@Model{graphIndex} = noEff m{graphIndex=graphIndex-1}
-updateModel NoOp m = noEff m
+updateModel Eval model = noEff $ runBackend model
+updateModel (TextInput newInput) model = noEff $ model & input .~ turnBackslashIntoLambda newInput
+updateModel CBNeed model = noEff $ runBackend $ model & strategy .~ CallByNeed
+updateModel CBName model = noEff $ runBackend $ model & strategy .~ CallByName
+updateModel CBValue model = noEff $ runBackend $ model & strategy .~ CallByValue
+updateModel Clear model = noEff $ model & input .~ "" & output .~ Left ""
+updateModel Next model = noEff $ model & graphIndex %~ (+1)
+updateModel Prev model = noEff $ model & graphIndex %~ subtract 1
+updateModel NoOp model = noEff model

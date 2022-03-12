@@ -2,16 +2,19 @@ module Model where
 
 import Miso
 import Miso.String
+import Control.Lens (makeLenses)
 
 import GraphReduction
 
 data Model = Model
-  { input :: MisoString
-  , strategy :: EvalStrategy
-  , output :: Either String (Int, [(Graph, Maybe Int)])
-  , graphIndex :: Int
+  { _input :: MisoString
+  , _strategy :: EvalStrategy
+  , _output :: Either String (Int, [(Graph, Maybe Int)])
+  , _graphIndex :: Int
   }
   deriving (Eq)
+
+makeLenses ''Model
 
 data Action
   = Eval
@@ -27,8 +30,8 @@ data Action
 
 initialModel :: Model
 initialModel = Model
-  { input = ""
-  , strategy = CallByNeed
-  , output = Left ""
-  , graphIndex = 0
+  { _input = ""
+  , _strategy = CallByNeed
+  , _output = Left ""
+  , _graphIndex = 0
   }

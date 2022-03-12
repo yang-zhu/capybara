@@ -6,6 +6,7 @@ import qualified Data.Sequence as Seq
 import Miso
 import Miso.String
 import Miso.Svg
+import Control.Lens ((^.))
 
 import GraphReduction
 import Model
@@ -17,13 +18,22 @@ type XCoord = Double
 header :: View Action
 header = h1_ []
   [ img_ [src_ "logo.svg", alt_ "logo-handdrawn capybara"]
-  , text "Capybara - chilled evaluation" ]
+  , text "Capybara, a chilled λ-evaluator"
+  ]
 
 formButtons :: Model -> [View Action]
-formButtons Model{strategy}=
+formButtons model =
   [ div_ [class_ "btn-group"]
-      [ button_ [type_ "button", class_ "btn btn-success", onClick Eval] [text (stratToStr strategy)]
-      , button_ [type_ "button", class_ "btn btn-success dropdown-toggle dropdown-toggle-split", textProp "data-bs-toggle" "dropdown", textProp "aria-expanded" "false"] [span_ [class_ "visually-hidden"] [text "Toggle Dropdown"]]
+      [ button_
+        [ type_ "button", class_ "btn btn-success", onClick Eval ]
+        [ text (stratToStr (model^.strategy)) ]
+      , button_
+        [ type_ "button"
+        , class_ "btn btn-success dropdown-toggle dropdown-toggle-split"
+        , textProp "data-bs-toggle" "dropdown"
+        , textProp "aria-expanded" "false"
+        ]
+        [ span_ [class_ "visually-hidden"] [text "Toggle Dropdown"] ]
       , ul_ [class_ "dropdown-menu"]
         [ li_ []
           [Miso.a_ [class_"dropdown-item", href_ "#", onClick CBNeed] [text (stratToStr CallByNeed)]]
@@ -49,12 +59,30 @@ onEnter act = onKeyDown (hitEnter act)
     hitEnter _ _ = NoOp
 
 inputArea :: Model -> View Action
-inputArea Model{input, output=Left err}
- | err /= "" = div_ [Miso.id_ "input-area"]
-    [ input_ [type_ "text", class_ "form-control is-invalid", placeholder_ "(\\x.x) y", value_ input, onInput TextInput, onEnter Eval, autofocus_ True]
+inputArea model
+  | Left err <- model^.output
+  , err /= ""
+  = div_ [Miso.id_ "input-area"]
+    [ input_
+      [ type_ "text"
+      , class_ "form-control is-invalid"
+      , placeholder_ "(\\x.x) y"
+      , value_ (model^.input)
+      , onInput TextInput
+      , onEnter Eval
+      , autofocus_ True
+      ]
     , div_ [class_ "invalid-feedback"] [text (ms err)]
     ]
-inputArea Model{input} = input_ [type_ "text", class_ "form-control", placeholder_ "(\\x.x) y", value_ input, onInput TextInput, onEnter Eval, autofocus_ True]
+  | otherwise
+  = input_
+    [ type_ "text", class_ "form-control"
+    , placeholder_ "(\\x.x) y"
+    , value_ (model^.input)
+    , onInput TextInput
+    , onEnter Eval
+    , autofocus_ True
+    ]
 
 form :: Model -> View Action
 form m = div_ [Miso.id_ "form"] (inputArea m : formButtons m)
@@ -100,35 +128,62 @@ draw (root, (graph, redex)) depths xcoords = case Seq.index graph root of
   LamNode v e -> let
     eX = xScale * Seq.index xcoords e
     eY = yScale * Seq.index depths e
-    in [ text_ [dominantBaseline_ "auto", textAnchor_ "middle", x_ (ms rootX), y_ (ms rootY)] [text ("λ"<> ms v)]
-       , line_ [x1_ (ms rootX), x2_ (ms eX), y1_ (ms (rootY+5)), y2_ (ms (eY-15)), stroke_ "black", strokeWidth_ "1.5"] []
-       ] ++ draw (e, (graph, redex)) depths xcoords
+    in  [ text_
+          [ dominantBaseline_ "auto"
+          , textAnchor_ "middle", x_ (ms rootX)
+          , y_ (ms rootY)
+          ]
+          [ text ("λ"<> ms v) ]
+        , line_
+          [ x1_ (ms rootX)
+          , x2_ (ms eX)
+          , y1_ (ms (rootY+5))
+          , y2_ (ms (eY-15))
+          , stroke_ "black"
+          , strokeWidth_ "1.5"
+          ] []
+        ]
+        ++ draw (e, (graph, redex)) depths xcoords
   AppNode e1 e2 -> let
     e1X = xScale * Seq.index xcoords e1
     e1Y = yScale * Seq.index depths e1
     e2X = xScale * Seq.index xcoords e2
     e2Y = yScale * Seq.index depths e2
-    in [ text_ 
+    in  [ text_ 
           [ dominantBaseline_ "auto"
           , textAnchor_ "middle"
           , x_ (ms rootX)
           , y_ (ms rootY)
           , if Just root == redex then fontWeight_ "bolder" else fontWeight_ "normal"
-          , if Just root == redex then fill_ "#0d6efd" else fill_ "black"]
-          [text "@"]
-        , path_ [d_ ("M " <> ms (rootX-5) <> " " <> ms (rootY+5) <> "Q " <> ms (rootX-10) <> " " <> ms (rootY+10) <> " " <> ms e1X <> " " <> ms (e1Y-15)), fill_ "transparent", stroke_ "black", strokeWidth_ "1.5"] []
-        , path_ [d_ ("M " <> ms (rootX+5) <> " " <> ms (rootY+5) <> "Q " <> ms (rootX+10) <> " " <> ms (rootY+10) <> " " <> ms e2X <> " " <> ms (e2Y-15)), fill_ "transparent", stroke_ "black", strokeWidth_ "1.5"] []
-        ] ++ draw (e1, (graph, redex)) depths xcoords ++ draw (e2, (graph, redex)) depths xcoords
+          , if Just root == redex then fill_ "#0d6efd" else fill_ "black"
+          ]
+          [ text "@" ]
+        , path_
+          [ d_ 
+            (  "M " <> ms (rootX-5) <> " " <> ms (rootY+5)
+            <> "Q " <> ms (rootX-10) <> " " <> ms (rootY+10)
+            <> " " <> ms e1X <> " " <> ms (e1Y-15)
+            )
+          , fill_ "transparent"
+          , stroke_ "black"
+          , strokeWidth_ "1.5"
+          ] []
+        , path_ 
+          [ d_
+            (  "M " <> ms (rootX+5)  <> " " <> ms (rootY+5)
+            <> "Q " <> ms (rootX+10) <> " " <> ms (rootY+10)
+            <> " " <> ms e2X <> " " <> ms (e2Y-15)
+            )
+          , fill_ "transparent"
+          , stroke_ "black"
+          , strokeWidth_ "1.5"
+          ] []
+        ]
+       ++ draw (e1, (graph, redex)) depths xcoords
+       ++ draw (e2, (graph, redex)) depths xcoords
   where
     rootX = xScale * Seq.index xcoords root
     rootY = yScale * Seq.index depths root
-
--- markRedex :: Maybe Int -> Seq Depth -> Seq XCoord -> View Action
--- markRedex (Just idx) depths xcoords = let
---   rectX = 10 * Seq.index xcoords idx
---   rectY = 50 * Seq.index depths idx - 4
---   in circle_ [cx_ (ms rectX), cy_ (ms rectY), r_ "10", fill_ "orange", stroke_ "transparent"] []
--- markRedex Nothing _ _ = text ""
 
 renderGraph :: Either String (Int, [(Graph, Maybe Int)]) -> Int -> View Action
 renderGraph (Right (root, graphs)) index = let
@@ -137,34 +192,52 @@ renderGraph (Right (root, graphs)) index = let
   (rightEdges, _, xcoords) = layout (root, graph) (Seq.replicate (Seq.length graph) (-1)) (repeat 0)
   viewBoxWidth = xScale * Prelude.maximum (Prelude.take (Seq.length graph) rightEdges) + 30
   viewBoxHeight = yScale * Prelude.maximum depths + 30
-  in svg_ [Miso.Svg.width_ (ms (1.5 * viewBoxWidth)), Miso.Svg.height_ (ms (1.5 * fromIntegral viewBoxHeight :: Double)), viewBox_ ("-15 -15 " <> ms viewBoxWidth <> " " <> ms viewBoxHeight)]
-          -- (markRedex redex depths xcoords: draw (root, graph) depths xcoords)
-          (draw (root, (graph, redex)) depths xcoords)
+  in svg_
+     [ Miso.Svg.width_ (ms (1.5 * viewBoxWidth))
+     , Miso.Svg.height_ (ms (1.5 * fromIntegral viewBoxHeight :: Double))
+     , viewBox_ ("-15 -15 " <> ms viewBoxWidth <> " " <> ms viewBoxHeight)
+     ]
+     (draw (root, (graph, redex)) depths xcoords)
 renderGraph (Left err) _ = text ""
 
 graphButtons :: Model -> View Action
-graphButtons Model{output=Right (_, graphs), graphIndex=gi} = div_ [Miso.id_ "graph-buttons"] 
-  [ div_ [class_ "btn-group"]
-      [ button_ [type_ "button", class_ "btn btn-outline-primary", disabled_ (gi == 0), onClick Prev] [text "◀"]
-      , button_ [type_ "button", class_ "btn btn-outline-primary", disabled_ (gi == Prelude.length graphs - 1), onClick Next] [text "▶"]
+graphButtons model
+  | Right (_, graphs) <- model^.output
+  = div_ [Miso.id_ "graph-buttons"]
+    [ div_ [class_ "btn-group"]
+      [ button_
+        [ type_ "button"
+        , class_ "btn btn-outline-primary"
+        , disabled_ (model^.graphIndex == 0)
+        , onClick Prev
+        ]
+        [ text "◀" ]
+      , button_
+        [ type_ "button"
+        , class_ "btn btn-outline-primary"
+        , disabled_ (model^.graphIndex == Prelude.length graphs - 1)
+        , onClick Next
+        ]
+        [ text "▶" ]
       ]
-  ]
-graphButtons m = text ""
+    ]
+  | otherwise = text ""
 
 graphView :: Model -> View Action
-graphView Model{output, graphIndex} = div_ [Miso.id_ "graph"]
-  [ renderGraph output graphIndex
-  ]
+graphView model
+  = div_ [Miso.id_ "graph"] [renderGraph (model^.output) (model^.graphIndex)]
 
 controlBar :: Model -> View Action
-controlBar m = div_ [Miso.id_ "control-bar"]
-  [ form m
-  , graphButtons m
-  ]
+controlBar model
+  = div_ [Miso.id_ "control-bar"]
+    [ form model
+    , graphButtons model
+    ]
 
 viewModel :: Model -> View Action
-viewModel m@(Model input strat output index) = div_ []
-  [ header
-  , controlBar m
-  , graphView m
-  ]
+viewModel model
+  = div_ []
+    [ header
+    , controlBar model
+    , graphView model
+    ]
