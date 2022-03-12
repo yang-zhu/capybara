@@ -72,19 +72,24 @@ computeDepths (root, graph) depths currDepth
     depths' = Seq.update root currDepth depths 
     currDepth' = currDepth + 1
 
-layout :: (Int, Graph) -> Seq XCoord -> XCoord -> (XCoord, XCoord, Seq XCoord)
-layout (root, graph) xcoords leftEdge
+layout :: (Int, Graph) -> Seq XCoord -> [XCoord] -> ([XCoord], XCoord, Seq XCoord)
+layout (root, graph) xcoords (leftEdge0:leftEdge1:leftEdges)  -- [XCoord] is an infinite list
   | Seq.index xcoords root == -1 = case Seq.index graph root of
-      VarNode v -> (leftEdge+4, leftEdge+2, Seq.update root (leftEdge+2) xcoords)  -- (right edge, root, xcoords)
+      VarNode v -> ((leftEdge0+4):leftEdge1:leftEdges, leftEdge0+2, Seq.update root (leftEdge0+2) xcoords)  -- (right edge, root, xcoords)
       LamNode v e -> let
-        (eRightEdge, eRoot, xcoords') = layout (e, graph) xcoords leftEdge
-        in (eRightEdge, eRoot, Seq.update root eRoot xcoords')
-      AppNode e1 e2 -> let
-        (e1RightEdge, e1Root, xcoords') = layout (e1, graph) xcoords leftEdge
-        (e2RightEdge, e2Root, xcoords'') = layout (e2, graph) xcoords' e1RightEdge
-        rootXCoord = (e1Root + e2Root) / 2
-        in (e2RightEdge, rootXCoord, Seq.update root rootXCoord xcoords'')
-  | otherwise = (leftEdge, leftEdge, xcoords)
+        (eRightEdges, eRoot, xcoords') = layout (e, graph) xcoords (max leftEdge0 leftEdge1 : leftEdges)
+        in ((eRoot+2):eRightEdges, eRoot, Seq.update root eRoot xcoords')
+      AppNode e1 e2 
+        | e1 == e2 -> let
+            (eRightEdges, eRoot, xcoords') = layout (e1, graph) xcoords (max leftEdge0 leftEdge1 : leftEdges)
+            in ((eRoot+2):eRightEdges, eRoot, Seq.update root eRoot xcoords')
+        | otherwise -> let
+            (e1RightEdges, e1Root, xcoords') = layout (e1, graph) xcoords (max (leftEdge0-2) leftEdge1:leftEdges)
+            (e2RightEdges, e2Root, xcoords'') = layout (e2, graph) xcoords' e1RightEdges
+            rootXCoord = (e1Root + e2Root) / 2
+            in ((rootXCoord+2):e2RightEdges, rootXCoord, Seq.update root rootXCoord xcoords'')
+  | otherwise = ((leftEdge0+4):leftEdge1:leftEdges, leftEdge0+2, xcoords)
+layout _ _ _ = undefined
 
 xScale = 10
 yScale = 40
@@ -129,8 +134,8 @@ renderGraph :: Either String (Int, [(Graph, Maybe Int)]) -> Int -> View Action
 renderGraph (Right (root, graphs)) index = let
   (graph, redex) = graphs !! index
   depths = computeDepths (root, graph) (Seq.replicate (Seq.length graph) (-1)) 0
-  (rightEdge, _, xcoords) = layout (root, graph) (Seq.replicate (Seq.length graph) (-1)) 0
-  viewBoxWidth = xScale * rightEdge + 30
+  (rightEdges, _, xcoords) = layout (root, graph) (Seq.replicate (Seq.length graph) (-1)) (repeat 0)
+  viewBoxWidth = xScale * Prelude.maximum (Prelude.take (Seq.length graph) rightEdges) + 30
   viewBoxHeight = yScale * Prelude.maximum depths + 30
   in svg_ [Miso.Svg.width_ (ms (1.5 * viewBoxWidth)), Miso.Svg.height_ (ms (1.5 * fromIntegral viewBoxHeight :: Double)), viewBox_ ("-15 -15 " <> ms viewBoxWidth <> " " <> ms viewBoxHeight)]
           -- (markRedex redex depths xcoords: draw (root, graph) depths xcoords)
