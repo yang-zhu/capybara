@@ -26,15 +26,32 @@ data EvalStrategy
   | CallByNeed
   deriving (Show, Eq)
 
--- mark free variables with a $-symbol at the beginning to distinguish them from bound variables
-renameFreeVars :: Expression -> Reader [String] Expression
-renameFreeVars (Var v) = do
-  boundVars <- ask
-  if v `elem` boundVars
-    then return $ Var v
-    else return $ Var ('$' : v)
-renameFreeVars (Lam v e) = Lam v <$> local (v :) (renameFreeVars e)
-renameFreeVars (App e1 e2) = App <$> renameFreeVars e1 <*> renameFreeVars e2
+digitToSubscript :: Char -> Char
+digitToSubscript '0' = '₀'
+digitToSubscript '1' = '₁'
+digitToSubscript '2' = '₂'
+digitToSubscript '3' = '₃'
+digitToSubscript '4' = '₄'
+digitToSubscript '5' = '₅'
+digitToSubscript '6' = '₆'
+digitToSubscript '7' = '₇'
+digitToSubscript '8' = '₈'
+digitToSubscript '9' = '₉'
+digitToSubscript c = c
+
+alphaRenaming :: Expression -> ReaderT [(String, String)] (State Int) Expression
+alphaRenaming (Var v) = do
+  renamings <- ask
+  case lookup v renamings of
+    Nothing -> return (Var v)
+    Just v' -> return (Var v')
+alphaRenaming (Lam v e) = do
+  counter <- lift get
+  lift (modify (+1))
+  let v' = v ++ map digitToSubscript (show counter)
+  e' <- local ((v, v'):) (alphaRenaming e)
+  return (Lam v' e')
+alphaRenaming (App e1 e2) = App <$> alphaRenaming e1 <*> alphaRenaming e2
 
 addNode :: Node -> State Graph Int
 addNode node = do
@@ -145,7 +162,7 @@ reduce strat root graph = let
 
 -- run the reduction
 run :: EvalStrategy -> Expression -> (Int, [(Graph, Maybe Int)])
-run strat expr =
-  let renamedExpr = runReader (renameFreeVars expr) []
-      (root, graph) = runState (astToGraph renamedExpr) Seq.empty
-   in (root, reduce strat root graph)
+run strat expr = let
+  renamedExpr = evalState (runReaderT (alphaRenaming expr) []) 1
+  (root, graph) = runState (astToGraph renamedExpr) Seq.empty
+  in (root, reduce strat root graph)
