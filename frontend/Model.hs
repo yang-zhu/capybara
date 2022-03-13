@@ -8,6 +8,7 @@ import GraphReduction
 
 data Model = Model
   { _input :: MisoString
+  , _definitions :: MisoString
   , _strategy :: EvalStrategy
   , _output :: Either String (Int, [(Graph, Maybe Int)])
   , _graphIndex :: Int
@@ -19,6 +20,7 @@ makeLenses ''Model
 data Action
   = Eval
   | TextInput MisoString
+  | DefInput MisoString
   | CBNeed
   | CBName
   | CBValue
@@ -31,6 +33,10 @@ data Action
 initialModel :: Model
 initialModel = Model
   { _input = ""
+  , _definitions
+      = "True = λx.λy.x;\n\
+        \False = λx.λy.y;\n\
+        \not = λx.x False True;\n"
   , _strategy = CallByNeed
   , _output = Left ""
   , _graphIndex = 0

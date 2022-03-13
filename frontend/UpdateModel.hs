@@ -15,13 +15,17 @@ turnBackslashIntoLambda = toMisoString . Prelude.map (\c -> if c =='\\' then 'λ
 runBackend :: Model -> Model
 runBackend model
   | model^.input == "" = model & output .~ Left ""
-  | otherwise = case Parser.parse (fromMisoString (model^.input)) of
-      Left err -> model & output .~ Left err
-      Right ast -> model & output .~ Right (GR.run (model^.strategy) ast) & graphIndex .~ 0
+  | otherwise = model & output .~ newOutput & graphIndex .~ 0
+  where
+    newOutput = do
+      ast <- parseExpression (fromMisoString (model^.input))
+      defs <- parseDefinitions (fromMisoString (model^.definitions))
+      return $ GR.run (model^.strategy) ast defs
 
 updateModel :: Action -> Model -> Effect Action Model
 updateModel Eval model = noEff $ runBackend model
 updateModel (TextInput newInput) model = noEff $ model & input .~ turnBackslashIntoLambda newInput
+updateModel (DefInput newInput) model = noEff $ model & definitions .~ turnBackslashIntoLambda newInput
 updateModel CBNeed model = noEff $ runBackend $ model & strategy .~ CallByNeed
 updateModel CBName model = noEff $ runBackend $ model & strategy .~ CallByName
 updateModel CBValue model = noEff $ runBackend $ model & strategy .~ CallByValue

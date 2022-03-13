@@ -223,6 +223,9 @@ graphButtons model
     ]
   | otherwise = text ""
 
+defArea :: Model -> View Action
+defArea model = textarea_ [type_ "text", onInput DefInput] [text (model^.definitions)]
+
 graphView :: Model -> View Action
 graphView model
   = div_ [Miso.id_ "graph"] [renderGraph (model^.output) (model^.graphIndex)]
@@ -239,5 +242,6 @@ viewModel model
   = div_ []
     [ header
     , controlBar model
+    , defArea model
     , graphView model
     ]
