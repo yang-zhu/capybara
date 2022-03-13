@@ -1,8 +1,8 @@
-module GraphReduction (
-  Node(..),
-  Graph,
-  EvalStrategy(..),
-  run
+module GraphReduction
+  ( Node(..)
+  , Graph
+  , EvalStrategy(..)
+  , run
   ) where
 
 import Control.Monad.Trans.Reader
@@ -131,8 +131,8 @@ instantiate param body arg = do
     else return body
 
 -- search for redex in an expression and do one reduction
-oneStepReduce :: Int -> ReaderT EvalStrategy (State Graph) (Bool, Maybe Int)
-oneStepReduce root = do
+oneStepReduce :: Int -> [Definition] -> ReaderT EvalStrategy (State Graph) (Bool, Maybe Int)
+oneStepReduce root defs = do
   strat <- ask
   rootNode <- lift (getNode root)
   case rootNode of
@@ -144,25 +144,35 @@ oneStepReduce root = do
           inst <- instantiate param body e2
           lift $ updateNode root inst
           return (True, Just root)
-        else oneStepReduce e2
-      _ -> oneStepReduce e1
+        else oneStepReduce e2 defs
+      VarNode v -> case lookUpInDefs v defs of
+        Just body -> do
+          bodyNode <- lift $ astToGraph body
+          lift $ updateNode e1 bodyNode
+          return (True, Just e1)
+        Nothing -> return (False, Nothing) 
+      _ -> oneStepReduce e1 defs
     _ -> return (False, Nothing)
   where
     isValue :: Node -> Bool
     isValue (AppNode _ _) = False
     isValue _ = True
 
+    lookUpInDefs :: String -> [Definition] -> Maybe Expression
+    lookUpInDefs _ [] = Nothing
+    lookUpInDefs var ((Def fun body):defs) = if var == fun then Just body else lookUpInDefs var defs
+
 -- reduce the complete graph
-reduce :: EvalStrategy -> Int -> Graph -> [(Graph, Maybe Int)]
-reduce strat root graph = let
-   ((reduced, redex), graph') = runState (runReaderT (oneStepReduce root) strat) graph
+reduce :: EvalStrategy -> Int -> Graph -> [Definition] -> [(Graph, Maybe Int)]
+reduce strat root graph defs = let
+   ((reduced, redex), graph') = runState (runReaderT (oneStepReduce root defs) strat) graph
    in if reduced
-        then (graph, redex) : reduce strat root graph'
+        then (graph, redex) : reduce strat root graph' defs
         else [(graph, redex)]
 
 -- run the reduction
-run :: EvalStrategy -> Expression -> (Int, [(Graph, Maybe Int)])
-run strat expr = let
+run :: EvalStrategy -> Expression -> [Definition] -> (Int, [(Graph, Maybe Int)])
+run strat expr defs = let
   renamedExpr = evalState (runReaderT (alphaRenaming expr) []) 1
   (root, graph) = runState (astToGraph renamedExpr) Seq.empty
-  in (root, reduce strat root graph)
+  in (root, reduce strat root graph defs)

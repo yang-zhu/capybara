@@ -1,6 +1,6 @@
 module Lexer
-  ( Token (..),
-    tokenize,
+  ( Token (..)
+  , tokenize
   )
 where
 
@@ -18,7 +18,7 @@ instance Show Token where
   show (Keyword kw) = "'" ++ kw ++ "'"
 
 symbols :: [Char]
-symbols = "λ.()"
+symbols = "λ.()=;"
 
 isIdentifierChar :: Char -> Bool
 isIdentifierChar c = isAlphaNum c || c == '_'

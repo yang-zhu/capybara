@@ -1,7 +1,9 @@
 module Parser
-  ( Expression (..),
-    parse,
-    abstraction,
+  ( Definition(..)
+  , Expression (..)
+  , parseDefinitions
+  , parseExpression
+  , abstraction
   )
 where
 
@@ -12,10 +14,14 @@ import Lexer
 
 {-
 Grammar:
+Program ::= Definition {Definition}
+Definition ::= Variable "=" Abstraction ";"
 Abstraction ::= "\" Variable "." Abstraction | Application
 Application ::= Atom {Atom}  -- left associative
 Atom ::= Variable | "(" Abstraction ")"
 -}
+
+data Definition = Def String Expression
 
 data Expression
   = Var String
@@ -56,10 +62,17 @@ instance Alternative Parser where
     Left _ -> runParser p2 ts
     Right res -> Right res
 
-parse :: String -> Either ParseError Expression
-parse input = case tokenize input >>= runParser abstraction of
+
+parse :: Parser a -> String -> Either ParseError a
+parse p input = case tokenize input >>= runParser p of
   Left err -> Left err
-  Right (ast, rest) -> if null rest then Right ast else Left "parse error"
+  Right (res, rest) -> if null rest then Right res else Left "parse error"
+
+parseDefinitions :: String -> Either ParseError [Definition]
+parseDefinitions = parse (some definition)
+
+parseExpression :: String -> Either ParseError Expression
+parseExpression = parse abstraction
 
 -- strip off the Parser constructor
 runParser :: Parser a -> [Token] -> Either ParseError (a, [Token])
@@ -82,6 +95,15 @@ matchKeyword tok = do
 -- abort parsing and deliver an error message
 errorMsg :: String -> Parser a
 errorMsg msg = Parser $ \_ -> Left msg
+
+-- parse a definition
+definition :: Parser Definition
+definition = do
+  fun <- variable
+  matchKeyword "="
+  body <- abstraction
+  matchKeyword ";"
+  return (Def fun body)
 
 -- parse an abstraction
 abstraction :: Parser Expression
