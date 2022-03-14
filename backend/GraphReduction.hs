@@ -9,8 +9,10 @@ import Control.Monad.Trans.Reader
 import Control.Monad.Trans.State
 import Data.Sequence (Seq, (|>))
 import qualified Data.Sequence as Seq
+import Data.Maybe (isJust)
 import Parser
 import Control.Monad.Trans.Class (lift)
+
 
 data Node
   = VarNode String
@@ -144,23 +146,27 @@ oneStepReduce root defs = do
           inst <- instantiate param body e2
           lift $ updateNode root inst
           return (True, Just root)
-        else oneStepReduce e2 defs
-      VarNode v -> case lookUpInDefs v defs of
-        Just body -> do
-          bodyNode <- lift $ astToGraph body
-          lift $ updateNode e1 bodyNode
-          return (True, Just e1)
-        Nothing -> return (False, Nothing) 
+        else oneStepReduce e2 defs    
       _ -> oneStepReduce e1 defs
+    VarNode v -> case lookUpInDefs v defs of
+      Just bodyExpr -> do
+        body <- lift $ astToGraph bodyExpr
+        lift $ updateNode root body
+        return (True, Just root)
+      Nothing -> return (False, Nothing)
     _ -> return (False, Nothing)
   where
     isValue :: Node -> Bool
     isValue (AppNode _ _) = False
+    isValue (VarNode v) = not $ isDef v defs
     isValue _ = True
 
     lookUpInDefs :: String -> [Definition] -> Maybe Expression
     lookUpInDefs _ [] = Nothing
     lookUpInDefs var ((Def fun body):defs) = if var == fun then Just body else lookUpInDefs var defs
+
+    isDef :: String -> [Definition] -> Bool
+    isDef = (isJust .) . lookUpInDefs
 
 -- reduce the complete graph
 reduce :: EvalStrategy -> Int -> Graph -> [Definition] -> [(Graph, Maybe Int)]
