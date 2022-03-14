@@ -124,7 +124,16 @@ yScale = 40
 
 draw :: (Int, (Graph, Maybe Int)) -> Seq Depth -> Seq XCoord -> [View Action]
 draw (root, (graph, redex)) depths xcoords = case Seq.index (graph^.nodes) root of
-  VarNode v -> [text_ [textAnchor_ "middle", x_ (ms rootX), y_ (ms rootY),fill_ "black"] [text (ms v)]]
+  VarNode v ->
+    [ text_
+      [ textAnchor_ "middle"
+      , x_ (ms rootX)
+      , y_ (ms rootY)
+      , if Just root == redex then fontWeight_ "bolder" else fontWeight_ "normal"
+      , if Just root == redex then fill_ "#0d6efd" else fill_ "black"
+      ]
+      [ text (ms v) ]
+    ]
   LamNode v e -> let
     eX = xScale * Seq.index xcoords e
     eY = yScale * Seq.index depths e
@@ -179,8 +188,8 @@ draw (root, (graph, redex)) depths xcoords = case Seq.index (graph^.nodes) root 
           , strokeWidth_ "1.5"
           ] []
         ]
-       ++ draw (e1, (graph, redex)) depths xcoords
-       ++ draw (e2, (graph, redex)) depths xcoords
+        ++ draw (e1, (graph, redex)) depths xcoords
+        ++ draw (e2, (graph, redex)) depths xcoords
   where
     rootX = xScale * Seq.index xcoords root
     rootY = yScale * Seq.index depths root
