@@ -66,6 +66,31 @@ input.form-control {
 
 #graph {
   display: flex;
-  justify-content: center;
-  margin: 20px;
+  flex-direction: column;
+  align-items: center;
+  flex-grow: 1;
+  margin: 10px;
+}
+
+#graph-buttons {
+  margin-bottom: 10px;
+}
+
+#def-graph-container {
+  display: flex;
+  align-items: flex-start;
+  margin: 10px;
+}
+
+#def-btn-container .btn {
+  transform: rotate(-90deg);
+  transform-origin: top right;
+  margin-left: -104px; 
+  margin-right: 39px;
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+#definitions:first-child {
+  transition: border-color .15s ease-in-out,box-shadow .15s ease-in-out;
 }

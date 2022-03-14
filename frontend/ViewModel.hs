@@ -223,25 +223,51 @@ graphButtons model
     ]
   | otherwise = text ""
 
-defArea :: Model -> View Action
-defArea model = textarea_ [type_ "text", onInput DefInput] [text (model^.definitions)]
+defButton :: View Action
+defButton = div_ [Miso.id_ "def-btn-container"] 
+  [ button_
+    [ type_ "button"
+    , class_ "btn btn-outline-primary"
+    , textProp "data-bs-toggle" "collapse"
+    , textProp "data-bs-target" "#definitions"
+    , textProp "aria-expanded" "false"
+    , textProp "aria-controls" "definitions"
+    ]
+    [ text "Definitions" ]
+  ]
+
+defInput :: Model -> View Action     
+defInput model = div_ [class_ "collapse collapse-horizontal show", Miso.id_ "definitions"] 
+  [ div_ [textProp "style" "width:300px"]
+    [ textarea_
+      [ type_ "text"
+      , class_ "form-control"
+      , rows_ "15"
+      , textProp "style" "width:300px"
+      , onInput DefInput
+      , value_ (model^.definitions)
+      ] []
+    ]
+  ]
 
 graphView :: Model -> View Action
-graphView model
-  = div_ [Miso.id_ "graph"] [renderGraph (model^.output) (model^.graphIndex)]
+graphView model =
+  div_ [Miso.id_ "graph"]
+  [ graphButtons model
+  , renderGraph (model^.output) (model^.graphIndex)
+  ]
+
+defAndGraph :: Model -> View Action
+defAndGraph model = div_ [Miso.id_ "def-graph-container"] [defButton, defInput model, graphView model]
 
 controlBar :: Model -> View Action
 controlBar model
-  = div_ [Miso.id_ "control-bar"]
-    [ form model
-    , graphButtons model
-    ]
+  = div_ [Miso.id_ "control-bar"][form model]
 
 viewModel :: Model -> View Action
 viewModel model
   = div_ []
     [ header
     , controlBar model
-    , defArea model
-    , graphView model
+    , defAndGraph model
     ]
