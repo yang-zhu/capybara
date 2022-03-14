@@ -13,7 +13,7 @@ data Model = Model
   , _output :: Either String (Int, [(Graph, Maybe Int)])
   , _graphIndex :: Int
   }
-  deriving (Eq)
+  deriving Eq
 
 makeLenses ''Model
 

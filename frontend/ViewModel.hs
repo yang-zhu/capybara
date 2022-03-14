@@ -89,7 +89,7 @@ form m = div_ [Miso.id_ "form"] (inputArea m : formButtons m)
 
 computeDepths :: (Int, Graph) -> Seq Depth -> Depth -> Seq Depth
 computeDepths (root, graph) depths currDepth
-  | currDepth > Seq.index depths root = case Seq.index graph root of
+  | currDepth > Seq.index depths root = case Seq.index (graph^.nodes) root of
       VarNode v -> depths'
       LamNode v e -> computeDepths (e, graph) depths' currDepth'
       AppNode e1 e2 -> let
@@ -102,7 +102,7 @@ computeDepths (root, graph) depths currDepth
 
 layout :: (Int, Graph) -> Seq XCoord -> [XCoord] -> ([XCoord], XCoord, Seq XCoord)
 layout (root, graph) xcoords (leftEdge0:leftEdge1:leftEdges)  -- [XCoord] is an infinite list
-  | Seq.index xcoords root == -1 = case Seq.index graph root of
+  | Seq.index xcoords root == -1 = case Seq.index (graph^.nodes) root of
       VarNode v -> ((leftEdge0+4):leftEdge1:leftEdges, leftEdge0+2, Seq.update root (leftEdge0+2) xcoords)  -- (right edge, root, xcoords)
       LamNode v e -> let
         (eRightEdges, eRoot, xcoords') = layout (e, graph) xcoords (max leftEdge0 leftEdge1 : leftEdges)
@@ -123,7 +123,7 @@ xScale = 10
 yScale = 40
 
 draw :: (Int, (Graph, Maybe Int)) -> Seq Depth -> Seq XCoord -> [View Action]
-draw (root, (graph, redex)) depths xcoords = case Seq.index graph root of
+draw (root, (graph, redex)) depths xcoords = case Seq.index (graph^.nodes) root of
   VarNode v -> [text_ [textAnchor_ "middle", x_ (ms rootX), y_ (ms rootY),fill_ "black"] [text (ms v)]]
   LamNode v e -> let
     eX = xScale * Seq.index xcoords e
@@ -188,9 +188,9 @@ draw (root, (graph, redex)) depths xcoords = case Seq.index graph root of
 renderGraph :: Either String (Int, [(Graph, Maybe Int)]) -> Int -> View Action
 renderGraph (Right (root, graphs)) index = let
   (graph, redex) = graphs !! index
-  depths = computeDepths (root, graph) (Seq.replicate (Seq.length graph) (-1)) 0
-  (rightEdges, _, xcoords) = layout (root, graph) (Seq.replicate (Seq.length graph) (-1)) (repeat 0)
-  viewBoxWidth = xScale * Prelude.maximum (Prelude.take (Seq.length graph) rightEdges) + 30
+  depths = computeDepths (root, graph) (Seq.replicate (Seq.length (graph^.nodes)) (-1)) 0
+  (rightEdges, _, xcoords) = layout (root, graph) (Seq.replicate (Seq.length (graph^.nodes)) (-1)) (repeat 0)
+  viewBoxWidth = xScale * Prelude.maximum (Prelude.take (Seq.length (graph^.nodes)) rightEdges) + 30
   viewBoxHeight = yScale * Prelude.maximum depths + 30
   in svg_
      [ Miso.Svg.width_ (ms (1.5 * viewBoxWidth))

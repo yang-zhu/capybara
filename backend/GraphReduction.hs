@@ -2,17 +2,20 @@ module GraphReduction
   ( Node(..)
   , Graph
   , EvalStrategy(..)
+  , nodes
+  , counter
   , run
   ) where
 
 import Control.Monad.Trans.Reader
 import Control.Monad.Trans.State
+import Control.Monad.Trans.Class (lift)
+import Control.Lens (makeLenses, (^.), (.~), (%~))
 import Data.Sequence (Seq, (|>))
 import qualified Data.Sequence as Seq
 import Data.Maybe (isJust)
-import Parser
-import Control.Monad.Trans.Class (lift)
 
+import Parser
 
 data Node
   = VarNode String
@@ -20,7 +23,13 @@ data Node
   | AppNode Int Int
   deriving (Show, Eq)
 
-type Graph = Seq Node
+data Graph = Graph
+  { _nodes :: Seq Node
+  , _counter :: Int
+  }
+  deriving Eq
+
+makeLenses ''Graph
 
 data EvalStrategy
   = CallByName
@@ -41,35 +50,35 @@ digitToSubscript '8' = '₈'
 digitToSubscript '9' = '₉'
 digitToSubscript c = c
 
-alphaRenaming :: Expression -> ReaderT [(String, String)] (State Int) Expression
-alphaRenaming (Var v) = do
+alphaRename :: Expression -> ReaderT [(String, String)] (State Int) Expression
+alphaRename (Var v) = do
   renamings <- ask
   case lookup v renamings of
     Nothing -> return (Var v)
     Just v' -> return (Var v')
-alphaRenaming (Lam v e) = do
+alphaRename (Lam v e) = do
   counter <- lift get
   lift (modify (+1))
   let v' = v ++ map digitToSubscript (show counter)
-  e' <- local ((v, v'):) (alphaRenaming e)
+  e' <- local ((v, v'):) (alphaRename e)
   return (Lam v' e')
-alphaRenaming (App e1 e2) = App <$> alphaRenaming e1 <*> alphaRenaming e2
+alphaRename (App e1 e2) = App <$> alphaRename e1 <*> alphaRename e2
 
 addNode :: Node -> State Graph Int
 addNode node = do
-  modify (|> node)
+  modify $ nodes %~ (|> node)
   graph <- get
-  return (Seq.length graph - 1)
+  return (Seq.length (graph^.nodes) - 1)
 
 getNode :: Int -> State Graph Node
 getNode index = do
   graph <- get
-  return (Seq.index graph index)
+  return (Seq.index (graph^.nodes) index)
 
 updateNode :: Int -> Int -> State Graph ()
 updateNode old new = do
   graph <- get
-  modify (Seq.update old (Seq.index graph new))
+  modify $ nodes %~ Seq.update old (Seq.index (graph^.nodes) new)
 
 -- convert the parse tree to a graph
 astToGraph :: Expression -> State Graph Int
@@ -86,7 +95,7 @@ astToGraph (App e1 e2) = do
 ifParamInBody :: String -> Int -> Reader Graph Bool
 ifParamInBody param body = do
   graph <- ask
-  case Seq.index graph body of
+  case Seq.index (graph^.nodes) body of
     VarNode v -> return (v == param)
     LamNode v e -> do
       res <- ifParamInBody param e
@@ -150,7 +159,10 @@ oneStepReduce root defs = do
       _ -> oneStepReduce e1 defs
     VarNode v -> case lookUpInDefs v defs of
       Just bodyExpr -> do
-        body <- lift $ astToGraph bodyExpr
+        graph <- lift get
+        let (bodyExpr', counter') = runState (runReaderT (alphaRename bodyExpr) []) (graph^.counter)
+        lift $ modify $ counter .~ counter' 
+        body <- lift $ astToGraph bodyExpr'
         lift $ updateNode root body
         return (True, Just root)
       Nothing -> return (False, Nothing)
@@ -179,6 +191,6 @@ reduce strat root graph defs = let
 -- run the reduction
 run :: EvalStrategy -> Expression -> [Definition] -> (Int, [(Graph, Maybe Int)])
 run strat expr defs = let
-  renamedExpr = evalState (runReaderT (alphaRenaming expr) []) 1
-  (root, graph) = runState (astToGraph renamedExpr) Seq.empty
+  (renamedExpr, counter) = runState (runReaderT (alphaRename expr) []) 1
+  (root, graph) = runState (astToGraph renamedExpr) Graph{_nodes=Seq.empty, _counter=counter}
   in (root, reduce strat root graph defs)
