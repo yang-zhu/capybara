@@ -3,10 +3,10 @@ module ViewModel(viewModel) where
 import Data.Foldable(toList)
 import Data.Sequence(Seq)
 import qualified Data.Sequence as Seq
-import Data.Maybe(isJust)
+import Data.Maybe(isJust, fromMaybe)
 import Control.Lens ((^.), _Just, (^?))
 import Miso
-import Miso.String
+import Miso.String (MisoString, ms)
 import Miso.Svg
 
 import Parser
@@ -124,10 +124,28 @@ computeDepths (root, graph) depths currDepth
     depths' = Seq.update root currDepth depths
     currDepth' = currDepth + 1
 
+-- generated using https://bl.ocks.org/tophtucker/62f93a4658387bb61e4510c37e2e97cf
+letterWidthTable = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.2490234375,0.33359375,0.40859375,0.5,0.5,0.83359375,0.778125,0.18046875,0.33359375,0.33359375,0.5,0.5640625,0.25,0.33359375,0.25,0.278125,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.278125,0.278125,0.5640625,0.5640625,0.5640625,0.44453125,0.92109375,0.72265625,0.6671875,0.6671875,0.72265625,0.6109375,0.55625,0.72265625,0.72265625,0.33359375,0.38984375,0.72265625,0.6109375,0.88984375,0.72265625,0.72265625,0.55625,0.72265625,0.6671875,0.55625,0.6109375,0.72265625,0.72265625,0.94453125,0.72265625,0.72265625,0.6109375,0.33359375,0.33984375,0.33359375,0.46953125,0.5,0.343359375,0.44453125,0.5,0.44453125,0.5,0.44453125,0.3828125,0.5,0.5,0.278125,0.3357421875,0.5,0.278125,0.778125,0.5,0.5,0.5,0.5,0.33642578125,0.38984375,0.27880859375,0.5,0.5,0.72265625,0.5,0.5,0.44453125,0.48046875,0.20078125,0.48046875,0.54140625]
+defaultLetterWidth = 0.5122738486842104
+
+(!?) :: [a] -> Int -> Maybe a
+[] !? _ = Nothing
+(x:xs) !? i
+  | i == 0 = Just x
+  | otherwise = xs !? (i - 1)
+
+stringWidth :: String -> Double
+stringWidth s = 2 * foldl (\acc c -> charWidth c + acc) 0 s
+  where
+    charWidth :: Char -> Double
+    charWidth c = fromMaybe defaultLetterWidth (letterWidthTable !? fromEnum c)
+
 layout :: (Int, Graph) -> Seq XCoord -> [XCoord] -> ([XCoord], XCoord, Seq XCoord)
 layout (root, graph) xcoords (leftEdge0:leftEdge1:leftEdges)  -- [XCoord] is an infinite list
   | Seq.index xcoords root == -1 = case Seq.index (graph^.nodes) root of
-      VarNode v -> ((leftEdge0+4):leftEdge1:leftEdges, leftEdge0+2, Seq.update root (leftEdge0+2) xcoords)  -- (right edge, root, xcoords)
+      VarNode v -> let
+        nodeWidth = max 4 (stringWidth v)
+        in ((leftEdge0+nodeWidth):leftEdge1:leftEdges, leftEdge0+nodeWidth/2, Seq.update root (leftEdge0+nodeWidth/2) xcoords)  -- (right edges, root, xcoords)
       LamNode v e -> let
         (eRightEdges, eRoot, xcoords') = layout (e, graph) xcoords (max leftEdge0 leftEdge1 : leftEdges)
         in ((eRoot+2):eRightEdges, eRoot, Seq.update root eRoot xcoords')
@@ -226,8 +244,8 @@ renderGraph (root, graphs) index = let
   (graph, redex) = graphs !! index
   depths = computeDepths (root, graph) (Seq.replicate (Seq.length (graph^.nodes)) (-1)) 0
   (rightEdges, _, xcoords) = layout (root, graph) (Seq.replicate (Seq.length (graph^.nodes)) (-1)) (repeat 0)
-  viewBoxWidth = xScale * Prelude.maximum (Prelude.take (Seq.length (graph^.nodes)) rightEdges) + 30
-  viewBoxHeight = yScale * Prelude.maximum depths + 30
+  viewBoxWidth = xScale * maximum (take (Seq.length (graph^.nodes)) rightEdges) + 30
+  viewBoxHeight = yScale * maximum depths + 30
   in svg_
       [ Miso.Svg.width_ (ms (1.5 * viewBoxWidth))
       , Miso.Svg.height_ (ms (1.5 * fromIntegral viewBoxHeight :: Double))
@@ -252,7 +270,7 @@ graphButtons model
           , button_
               [ type_ "button"
               , class_ "btn btn-outline-primary"
-              , disabled_ (model^.graphIndex == Prelude.length graphs - 1)
+              , disabled_ (model^.graphIndex == length graphs - 1)
               , onClick Next
               ]
               [ text "▶" ]
