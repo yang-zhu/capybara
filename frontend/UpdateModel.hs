@@ -1,13 +1,14 @@
 module UpdateModel(updateModel) where
 
+import Control.Lens ((&), (^.), (%~), (.~))
 import Miso
 import Miso.String
-import Control.Lens.Operators
 
 import Lexer
 import Parser
 import GraphReduction as GR
 import Model
+
 
 turnBackslashIntoLambda :: MisoString -> MisoString
 turnBackslashIntoLambda = toMisoString . Prelude.map (\c -> if c =='\\' then 'λ' else c) . fromMisoString
@@ -22,11 +23,6 @@ runBackend model
       Right expr -> case parseDefinitions (fromMisoString (model^.definitions)) of
         Left err -> Output Nothing (Just err)
         Right defs -> Output (Just (GR.run (model^.strategy) expr defs)) Nothing
-      
-      -- do
-      -- ast <- parseExpression (fromMisoString (model^.input))
-      -- defs <- parseDefinitions (fromMisoString (model^.definitions))
-      -- return $ GR.run (model^.strategy) ast defs
 
 updateModel :: Action -> Model -> Effect Action Model
 updateModel Eval model = noEff $ runBackend model

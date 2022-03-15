@@ -1,8 +1,9 @@
 module Model where
 
+import Control.Lens (makeLenses)
 import Miso
 import Miso.String
-import Control.Lens (makeLenses)
+
 import Parser
 import GraphReduction
 
@@ -38,6 +39,7 @@ data Action
   | Prev
   | NoOp
   deriving (Show, Eq)
+
 
 initialModel :: Model
 initialModel = Model

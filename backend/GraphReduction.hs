@@ -7,15 +7,16 @@ module GraphReduction
   , run
   ) where
 
+import qualified Data.Sequence as Seq
+import Data.Maybe (isJust)
 import Control.Monad.Trans.Reader
 import Control.Monad.Trans.State
 import Control.Monad.Trans.Class (lift)
 import Control.Lens (makeLenses, (^.), (.~), (%~))
 import Data.Sequence (Seq, (|>))
-import qualified Data.Sequence as Seq
-import Data.Maybe (isJust)
 
 import Parser
+
 
 data Node
   = VarNode String
@@ -36,6 +37,7 @@ data EvalStrategy
   | CallByValue
   | CallByNeed
   deriving (Show, Eq)
+
 
 digitToSubscript :: Char -> Char
 digitToSubscript '0' = '₀'
@@ -155,13 +157,13 @@ oneStepReduce root defs = do
           inst <- instantiate param body e2
           lift $ updateNode root inst
           return (True, Just root)
-        else oneStepReduce e2 defs    
+        else oneStepReduce e2 defs
       _ -> oneStepReduce e1 defs
     VarNode v -> case lookUpInDefs v defs of
       Just bodyExpr -> do
         graph <- lift get
         let (bodyExpr', counter') = runState (runReaderT (alphaRename bodyExpr) []) (graph^.counter)
-        lift $ modify $ counter .~ counter' 
+        lift $ modify $ counter .~ counter'
         body <- lift $ astToGraph bodyExpr'
         lift $ updateNode root body
         return (True, Just root)

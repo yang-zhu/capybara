@@ -6,6 +6,7 @@ where
 
 import Data.Char (isAlpha, isAlphaNum, isSpace)
 
+
 type LexError = String
 
 data Token
@@ -16,6 +17,7 @@ data Token
 instance Show Token where
   show (Variable v) = "variable " ++ v
   show (Keyword kw) = "'" ++ kw ++ "'"
+
 
 symbols :: [Char]
 symbols = "λ.()=;"

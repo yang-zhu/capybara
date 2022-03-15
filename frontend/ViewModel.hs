@@ -8,6 +8,7 @@ import Control.Lens ((^.), _Just, (^?))
 import Miso
 import Miso.String
 import Miso.Svg
+
 import Parser
 import GraphReduction
 import Model
@@ -16,14 +17,17 @@ import Model
 type Depth = Int
 type XCoord = Double
 
+
 header :: View Action
-header = h4_ []
-  [ img_ [src_ "logo.svg", alt_ "logo-handdrawn capybara"]
-  , text "Capybara "
-  , small_ 
-      [class_ "text-muted", textProp "style" "margin-left: 0.5em"]
-      [text "a chilled λ-evaluator"]
-  ]
+header =
+  h4_
+    []
+    [ img_ [src_ "logo.svg", alt_ "logo-handdrawn capybara"]
+    , text "Capybara "
+    , small_
+        [class_ "text-muted", textProp "style" "margin-left: 0.5em"]
+        [text "a chilled λ-evaluator"]
+    ]
 
 defMenu :: View Action
 defMenu =
@@ -43,27 +47,33 @@ defMenu =
 
 formButtons :: Model -> [View Action]
 formButtons model =
-  [ div_ [class_ "btn-group"]
-      [ button_
-        [ type_ "button", class_ "btn btn-success", onClick Eval ]
-        [ text (stratToStr (model^.strategy)) ]
-      , button_
-        [ type_ "button"
-        , class_ "btn btn-success dropdown-toggle dropdown-toggle-split"
-        , textProp "data-bs-toggle" "dropdown"
-        , textProp "aria-expanded" "false"
-        ]
-        [ span_ [class_ "visually-hidden"] [text "Toggle Dropdown"] ]
-      , ul_ [class_ "dropdown-menu"]
-        [ li_ []
-          [Miso.a_ [class_"dropdown-item", href_ "#", onClick CBNeed] [text (stratToStr CallByNeed)]]
-        , li_ []
-          [Miso.a_ [class_"dropdown-item", href_ "#", onClick CBName] [text (stratToStr CallByName)]]
-        , li_ []
-          [Miso.a_ [class_"dropdown-item", href_ "#", onClick CBValue] [text (stratToStr CallByValue)]]
-        ]
+  [ div_
+    [class_ "btn-group"]
+    [ button_
+      [ type_ "button", class_ "btn btn-success", onClick Eval ]
+      [ text (stratToStr (model^.strategy)) ]
+    , button_
+      [ type_ "button"
+      , class_ "btn btn-success dropdown-toggle dropdown-toggle-split"
+      , textProp "data-bs-toggle" "dropdown"
+      , textProp "aria-expanded" "false"
       ]
-  , button_ [type_ "button", class_ "btn btn-secondary", onClick Clear] [text "clear"]
+      [ span_ [class_ "visually-hidden"] [text "Toggle Dropdown"] ]
+    , ul_ [class_ "dropdown-menu"]
+      [ li_ []
+        [Miso.a_ [class_"dropdown-item", href_ "#", onClick CBNeed] [text (stratToStr CallByNeed)]]
+      , li_ []
+        [Miso.a_ [class_"dropdown-item", href_ "#", onClick CBName] [text (stratToStr CallByName)]]
+      , li_ []
+        [Miso.a_ [class_"dropdown-item", href_ "#", onClick CBValue] [text (stratToStr CallByValue)]]
+      ]
+    ]
+  , button_
+      [ type_ "button"
+      , class_ "btn btn-secondary"
+      , onClick Clear
+      ]
+      [ text "clear" ]
   ]
   where
     stratToStr :: EvalStrategy -> MisoString
@@ -80,7 +90,7 @@ onEnter act = onKeyDown (hitEnter act)
 
 inputArea :: Model -> View Action
 inputArea model =
-  div_ 
+  div_
     [ Miso.id_ "input-area" ]
     [ input_
       [ type_ "text"
@@ -111,7 +121,7 @@ computeDepths (root, graph) depths currDepth
         in computeDepths (e2, graph) depths'' currDepth'
   | otherwise = depths
   where
-    depths' = Seq.update root currDepth depths 
+    depths' = Seq.update root currDepth depths
     currDepth' = currDepth + 1
 
 layout :: (Int, Graph) -> Seq XCoord -> [XCoord] -> ([XCoord], XCoord, Seq XCoord)
@@ -121,7 +131,7 @@ layout (root, graph) xcoords (leftEdge0:leftEdge1:leftEdges)  -- [XCoord] is an 
       LamNode v e -> let
         (eRightEdges, eRoot, xcoords') = layout (e, graph) xcoords (max leftEdge0 leftEdge1 : leftEdges)
         in ((eRoot+2):eRightEdges, eRoot, Seq.update root eRoot xcoords')
-      AppNode e1 e2 
+      AppNode e1 e2
         | e1 == e2 -> let
             (eRightEdges, eRoot, xcoords') = layout (e1, graph) xcoords (max leftEdge0 leftEdge1 : leftEdges)
             in ((eRoot+2):eRightEdges, eRoot, Seq.update root eRoot xcoords')
@@ -140,31 +150,32 @@ draw :: (Int, (Graph, Maybe Int)) -> Seq Depth -> Seq XCoord -> [View Action]
 draw (root, (graph, redex)) depths xcoords = case Seq.index (graph^.nodes) root of
   VarNode v ->
     [ text_
-      [ textAnchor_ "middle"
-      , x_ (ms rootX)
-      , y_ (ms rootY)
-      , if Just root == redex then fontWeight_ "bolder" else fontWeight_ "normal"
-      , if Just root == redex then fill_ "#0d6efd" else fill_ "black"
-      ]
-      [ text (ms v) ]
+        [ textAnchor_ "middle"
+        , x_ (ms rootX)
+        , y_ (ms rootY)
+        , if Just root == redex then fontWeight_ "bolder" else fontWeight_ "normal"
+        , if Just root == redex then fill_ "#0d6efd" else fill_ "black"
+        ]
+        [ text (ms v) ]
     ]
   LamNode v e -> let
     eX = xScale * Seq.index xcoords e
     eY = yScale * Seq.index depths e
     in  [ text_
-          [ dominantBaseline_ "auto"
-          , textAnchor_ "middle", x_ (ms rootX)
-          , y_ (ms rootY)
-          ]
-          [ text ("λ"<> ms v) ]
+            [ dominantBaseline_ "auto"
+            , textAnchor_ "middle", x_ (ms rootX)
+            , y_ (ms rootY)
+            ]
+            [ text ("λ"<> ms v) ]
         , line_
-          [ x1_ (ms rootX)
-          , x2_ (ms eX)
-          , y1_ (ms (rootY+5))
-          , y2_ (ms (eY-15))
-          , stroke_ "black"
-          , strokeWidth_ "1.5"
-          ] []
+            [ x1_ (ms rootX)
+            , x2_ (ms eX)
+            , y1_ (ms (rootY+5))
+            , y2_ (ms (eY-15))
+            , stroke_ "black"
+            , strokeWidth_ "1.5"
+            ]
+            []
         ]
         ++ draw (e, (graph, redex)) depths xcoords
   AppNode e1 e2 -> let
@@ -172,35 +183,37 @@ draw (root, (graph, redex)) depths xcoords = case Seq.index (graph^.nodes) root 
     e1Y = yScale * Seq.index depths e1
     e2X = xScale * Seq.index xcoords e2
     e2Y = yScale * Seq.index depths e2
-    in  [ text_ 
-          [ dominantBaseline_ "auto"
-          , textAnchor_ "middle"
-          , x_ (ms rootX)
-          , y_ (ms rootY)
-          , if Just root == redex then fontWeight_ "bolder" else fontWeight_ "normal"
-          , if Just root == redex then fill_ "#0d6efd" else fill_ "black"
-          ]
-          [ text "@" ]
+    in  [ text_
+            [ dominantBaseline_ "auto"
+            , textAnchor_ "middle"
+            , x_ (ms rootX)
+            , y_ (ms rootY)
+            , if Just root == redex then fontWeight_ "bolder" else fontWeight_ "normal"
+            , if Just root == redex then fill_ "#0d6efd" else fill_ "black"
+            ]
+            [ text "@" ]
         , path_
-          [ d_ 
-            (  "M " <> ms (rootX-5) <> " " <> ms (rootY+5)
-            <> "Q " <> ms (rootX-10) <> " " <> ms (rootY+10)
-            <> " " <> ms e1X <> " " <> ms (e1Y-15)
-            )
-          , fill_ "transparent"
-          , stroke_ "black"
-          , strokeWidth_ "1.5"
-          ] []
-        , path_ 
-          [ d_
-            (  "M " <> ms (rootX+5)  <> " " <> ms (rootY+5)
-            <> "Q " <> ms (rootX+10) <> " " <> ms (rootY+10)
-            <> " " <> ms e2X <> " " <> ms (e2Y-15)
-            )
-          , fill_ "transparent"
-          , stroke_ "black"
-          , strokeWidth_ "1.5"
-          ] []
+            [ d_
+              (  "M " <> ms (rootX-5) <> " " <> ms (rootY+5)
+              <> "Q " <> ms (rootX-10) <> " " <> ms (rootY+10)
+              <> " " <> ms e1X <> " " <> ms (e1Y-15)
+              )
+            , fill_ "transparent"
+            , stroke_ "black"
+            , strokeWidth_ "1.5"
+            ]
+            []
+        , path_
+            [ d_
+              (  "M " <> ms (rootX+5)  <> " " <> ms (rootY+5)
+              <> "Q " <> ms (rootX+10) <> " " <> ms (rootY+10)
+              <> " " <> ms e2X <> " " <> ms (e2Y-15)
+              )
+            , fill_ "transparent"
+            , stroke_ "black"
+            , strokeWidth_ "1.5"
+            ]
+            []
         ]
         ++ draw (e1, (graph, redex)) depths xcoords
         ++ draw (e2, (graph, redex)) depths xcoords
@@ -216,46 +229,50 @@ renderGraph (root, graphs) index = let
   viewBoxWidth = xScale * Prelude.maximum (Prelude.take (Seq.length (graph^.nodes)) rightEdges) + 30
   viewBoxHeight = yScale * Prelude.maximum depths + 30
   in svg_
-     [ Miso.Svg.width_ (ms (1.5 * viewBoxWidth))
-     , Miso.Svg.height_ (ms (1.5 * fromIntegral viewBoxHeight :: Double))
-     , viewBox_ ("-15 -15 " <> ms viewBoxWidth <> " " <> ms viewBoxHeight)
-     ]
-     (draw (root, (graph, redex)) depths xcoords)
+      [ Miso.Svg.width_ (ms (1.5 * viewBoxWidth))
+      , Miso.Svg.height_ (ms (1.5 * fromIntegral viewBoxHeight :: Double))
+      , viewBox_ ("-15 -15 " <> ms viewBoxWidth <> " " <> ms viewBoxHeight)
+      ]
+      (draw (root, (graph, redex)) depths xcoords)
 
 graphButtons :: Model -> View Action
 graphButtons model
-  | Just (_, graphs) <- model ^. (output . graph)
-  = div_ [Miso.id_ "graph-buttons"]
-    [ div_ [class_ "btn-group"]
-      [ button_
-        [ type_ "button"
-        , class_ "btn btn-outline-primary"
-        , disabled_ (model^.graphIndex == 0)
-        , onClick Prev
-        ]
-        [ text "◀" ]
-      , button_
-        [ type_ "button"
-        , class_ "btn btn-outline-primary"
-        , disabled_ (model^.graphIndex == Prelude.length graphs - 1)
-        , onClick Next
-        ]
-        [ text "▶" ]
+  | Just (_, graphs) <- model ^. (output . graph) =
+    div_
+      [ Miso.id_ "graph-buttons" ]
+      [ div_
+          [class_ "btn-group"]
+          [ button_
+              [ type_ "button"
+              , class_ "btn btn-outline-primary"
+              , disabled_ (model^.graphIndex == 0)
+              , onClick Prev
+              ]
+              [ text "◀" ]
+          , button_
+              [ type_ "button"
+              , class_ "btn btn-outline-primary"
+              , disabled_ (model^.graphIndex == Prelude.length graphs - 1)
+              , onClick Next
+              ]
+              [ text "▶" ]
+          ]
       ]
-    ]
   | otherwise = text ""
 
-defInput :: Model -> View Action     
+defInput :: Model -> View Action
 defInput model =
   div_
-    [ class_ "collapse collapse-horizontal", Miso.id_ "definitions" ]
+    [ class_ "collapse collapse-horizontal"
+    , Miso.id_ "definitions"
+    ]
     [ div_
-        [class_ "card"
+        [ class_ "card"
         , textProp "style" "width:300px"
         ]
         [ div_
-            [ class_ "card-header" ]
-            [ text "Definitions" ]
+            [class_ "card-header"]
+            [text "Definitions"]
         , div_
             [ class_ "card-body"
             , textProp "style" "padding:0"
@@ -277,40 +294,40 @@ defInput model =
 graphView :: Model -> View Action
 graphView model
   | Just graphs <- model ^. (output . graph) =
-    div_ 
-      [Miso.id_ "graph"]
+    div_
+      [ Miso.id_ "graph-area" ]
       [ graphButtons model
       , renderGraph graphs (model^.graphIndex)
       ]
   | Just (ExprError err) <- model ^. (output . inputError) =
-    div_ 
-      [Miso.id_ "graph"]
-      [
     div_
-      [ class_ "alert alert-danger"
+      [ Miso.id_ "graph-area" ]
+      [ div_
+        [class_ "alert alert-danger"]
+        [text (ms err)]
       ]
-      [text (ms err)]]
   | Just (DefError err) <- model ^. (output . inputError) =
-    div_ 
-      [Miso.id_ "graph"]
-      [
     div_
-      [ class_ "alert alert-danger"
-      ]
-      [text (ms err)]]
+      [ Miso.id_ "graph-area" ]
+      [ div_
+        [class_ "alert alert-danger"]
+        [text (ms err)]]
   | otherwise = text ""
 
 defAndGraph :: Model -> View Action
-defAndGraph model = div_ [Miso.id_ "def-graph-container"] [div_ [] [], defInput model, graphView model]  -- empty div to make collapse work
-
-controlBar :: Model -> View Action
-controlBar model
-  = div_ [Miso.id_ "control-bar"][form model]
+defAndGraph model =
+  div_
+    [ Miso.id_ "def-graph-container" ]
+    [ div_ [] []  -- empty div to make collapse work
+    , defInput model
+    , graphView model
+    ]
 
 viewModel :: Model -> View Action
-viewModel model
-  = div_ []
+viewModel model =
+  div_
+    []
     [ header
-    , controlBar model
+    , form model
     , defAndGraph model
     ]
