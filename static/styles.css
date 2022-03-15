@@ -1,18 +1,24 @@
 @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@500&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Brygada+1918&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Ubuntu+Mono&display=swap');
 
 body {
   margin: 10px;
 }
 
-h1 {
+h4 {
   font-family: "Quicksand", sans-serif;
 }
 
 img {
-  width: 3em;
-  margin-right: 0.5em;
+  width: 2.5em;
+  margin-right: 0.2em;
   padding-bottom: 0.5em;
+}
+
+.form-control {
+  font-family: "Ubuntu Mono", monospace;
+  font-size: 1.1rem;
 }
 
 button {
@@ -40,10 +46,6 @@ svg text {
   flex-grow: 1;
 }
 
-input.form-control {
-  padding: 10px;
-}
-
 #graph-buttons {
   display: flex;
   justify-content: center;
@@ -51,11 +53,6 @@ input.form-control {
 
 #graph-buttons .btn {
   padding: 0.1rem 0.75rem;
-}
-
-#control-bar {
-  position: sticky;
-  top: 5px;
 }
 
 .btn:disabled {

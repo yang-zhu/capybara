@@ -16,9 +16,12 @@ type Depth = Int
 type XCoord = Double
 
 header :: View Action
-header = h1_ []
+header = h4_ []
   [ img_ [src_ "logo.svg", alt_ "logo-handdrawn capybara"]
-  , text "Capybara, a chilled λ-evaluator"
+  , text "Capybara "
+  , small_ 
+      [class_ "text-muted", textProp "style" "margin-left: 0.5em"]
+      [text "a chilled λ-evaluator"]
   ]
 
 defMenu :: View Action
@@ -287,7 +290,7 @@ graphView model =
   ]
 
 defAndGraph :: Model -> View Action
-defAndGraph model = div_ [Miso.id_ "def-graph-container"] [div_ [] [], defInput model, graphView model]
+defAndGraph model = div_ [Miso.id_ "def-graph-container"] [div_ [] [], defInput model, graphView model]  -- empty div to make collapse work
 
 controlBar :: Model -> View Action
 controlBar model
