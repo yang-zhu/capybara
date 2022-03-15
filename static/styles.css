@@ -16,7 +16,6 @@ img {
 }
 
 button {
-  margin: 3px 0px;
   white-space: nowrap;
 }
 
@@ -32,7 +31,7 @@ svg text {
 #form {
   display: flex;
   flex-direction: row;
-  align-items: flex-start;
+  align-items: center;
   margin: 10px;
   gap: 5px;
 }

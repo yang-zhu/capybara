@@ -21,6 +21,22 @@ header = h1_ []
   , text "Capybara, a chilled λ-evaluator"
   ]
 
+defMenu :: View Action
+defMenu =
+  div_
+    []
+    [button_
+      [ type_ "button"
+      , class_ "btn btn-outline-success material-icons"
+      , textProp "data-bs-toggle" "collapse"
+      , textProp "data-bs-target" "#definitions"
+      , textProp "aria-expanded" "false"
+      , textProp "aria-controls" "definitions"
+      , textProp "style" "padding: 3px; font-size: 25px;"
+      ]
+      [ text "reorder" ]
+    ]
+
 formButtons :: Model -> [View Action]
 formButtons model =
   [ div_ [class_ "btn-group"]
@@ -85,7 +101,10 @@ inputArea model
     ]
 
 form :: Model -> View Action
-form m = div_ [Miso.id_ "form"] (inputArea m : formButtons m)
+form m =
+  div_
+    [Miso.id_ "form"]
+    (defMenu : inputArea m : formButtons m)
 
 computeDepths :: (Int, Graph) -> Seq Depth -> Depth -> Seq Depth
 computeDepths (root, graph) depths currDepth
@@ -232,32 +251,33 @@ graphButtons model
     ]
   | otherwise = text ""
 
-defButton :: View Action
-defButton = div_ [Miso.id_ "def-btn-container"] 
-  [ button_
-    [ type_ "button"
-    , class_ "btn btn-outline-primary"
-    , textProp "data-bs-toggle" "collapse"
-    , textProp "data-bs-target" "#definitions"
-    , textProp "aria-expanded" "false"
-    , textProp "aria-controls" "definitions"
-    ]
-    [ text "Definitions" ]
-  ]
-
 defInput :: Model -> View Action     
-defInput model = div_ [class_ "collapse collapse-horizontal show", Miso.id_ "definitions"] 
-  [ div_ [textProp "style" "width:300px"]
-    [ textarea_
-      [ type_ "text"
-      , class_ "form-control"
-      , rows_ "15"
-      , textProp "style" "width:300px"
-      , onInput DefInput
-      , value_ (model^.definitions)
-      ] []
+defInput model =
+  div_
+    [ class_ "collapse collapse-horizontal", Miso.id_ "definitions" ]
+    [ div_
+        [class_ "card"
+        , textProp "style" "width:300px"
+        ]
+        [ div_
+            [ class_ "card-header" ]
+            [ text "Definitions" ]
+        , div_
+            [ class_ "card-body"
+            , textProp "style" "padding:0"
+            ]
+            [ textarea_
+              [ type_ "text"
+              , class_ "form-control"
+              , rows_ "15"
+              , textProp "style" "border:0"
+              , onInput DefInput
+              , value_ (model^.definitions)
+              ]
+              []
+            ]
+        ]
     ]
-  ]
 
 graphView :: Model -> View Action
 graphView model =
@@ -267,7 +287,7 @@ graphView model =
   ]
 
 defAndGraph :: Model -> View Action
-defAndGraph model = div_ [Miso.id_ "def-graph-container"] [defButton, defInput model, graphView model]
+defAndGraph model = div_ [Miso.id_ "def-graph-container"] [div_ [] [], defInput model, graphView model]
 
 controlBar :: Model -> View Action
 controlBar model
