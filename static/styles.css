@@ -60,6 +60,11 @@ svg text {
   border-color: #6c757d;
 }
 
+.alert {
+  padding-top: 0.6rem;
+  padding-bottom: 0.6rem;
+}
+
 #graph {
   display: flex;
   flex-direction: column;

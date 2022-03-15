@@ -1,13 +1,17 @@
 module Parser
   ( Definition(..)
   , Expression (..)
+  , ParseError (..)
   , parseDefinitions
   , parseExpression
   , abstraction
+  , _ExprError
+  , _DefError
   )
 where
 
 import Control.Applicative (Alternative (..))
+import Control.Lens(makePrisms)
 import Lexer
 
 -- import Debug.Trace (trace)
@@ -27,11 +31,16 @@ data Expression
   = Var String
   | Lam String Expression
   | App Expression Expression
-  deriving (Show)
+  deriving Show
 
-type ParseError = String
+data ParseError
+  = ExprError String
+  | DefError String
+  deriving Eq
 
-newtype Parser a = Parser ([Token] -> Either ParseError (a, [Token]))
+makePrisms ''ParseError
+
+newtype Parser a = Parser ([Token] -> Either String (a, [Token]))
 
 instance Monad Parser where
   return :: a -> Parser a
@@ -63,19 +72,19 @@ instance Alternative Parser where
     Right res -> Right res
 
 
-parse :: Parser a -> String -> Either ParseError a
+parse :: Parser a -> String -> Either String a
 parse p input = case tokenize input >>= runParser p of
   Left err -> Left err
   Right (res, rest) -> if null rest then Right res else Left "parse error"
 
 parseDefinitions :: String -> Either ParseError [Definition]
-parseDefinitions = parse (some definition)
+parseDefinitions defs = either (Left . DefError) Right (parse (some definition) defs)
 
 parseExpression :: String -> Either ParseError Expression
-parseExpression = parse abstraction
+parseExpression expr = either (Left . ExprError) Right (parse abstraction expr)
 
 -- strip off the Parser constructor
-runParser :: Parser a -> [Token] -> Either ParseError (a, [Token])
+runParser :: Parser a -> [Token] -> Either String (a, [Token])
 runParser (Parser p) = p
 
 -- parse a token

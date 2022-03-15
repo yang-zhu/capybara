@@ -3,14 +3,23 @@ module Model where
 import Miso
 import Miso.String
 import Control.Lens (makeLenses)
-
+import Parser
 import GraphReduction
+
+
+data Output = Output
+  { _graph :: Maybe (Int, [(Graph, Maybe Int)])
+  , _inputError :: Maybe ParseError
+  }
+  deriving Eq
+
+makeLenses ''Output
 
 data Model = Model
   { _input :: MisoString
   , _definitions :: MisoString
   , _strategy :: EvalStrategy
-  , _output :: Either String (Int, [(Graph, Maybe Int)])
+  , _output :: Output
   , _graphIndex :: Int
   }
   deriving Eq
@@ -38,6 +47,6 @@ initialModel = Model
         \False = λx.λy.y;\n\
         \not = λx.x False True;\n"
   , _strategy = CallByNeed
-  , _output = Left ""
+  , _output = Output Nothing Nothing
   , _graphIndex = 0
   }

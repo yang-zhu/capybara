@@ -3,11 +3,12 @@ module ViewModel(viewModel) where
 import Data.Foldable(toList)
 import Data.Sequence(Seq)
 import qualified Data.Sequence as Seq
+import Data.Maybe(isJust)
+import Control.Lens ((^.), _Just, (^?))
 import Miso
 import Miso.String
 import Miso.Svg
-import Control.Lens ((^.))
-
+import Parser
 import GraphReduction
 import Model
 
@@ -78,29 +79,20 @@ onEnter act = onKeyDown (hitEnter act)
     hitEnter _ _ = NoOp
 
 inputArea :: Model -> View Action
-inputArea model
-  | Left err <- model^.output
-  , err /= ""
-  = div_ [Miso.id_ "input-area"]
+inputArea model =
+  div_ 
+    [ Miso.id_ "input-area" ]
     [ input_
       [ type_ "text"
-      , class_ "form-control is-invalid"
+      , if isJust $ model ^? output . inputError . _Just . _ExprError
+          then class_ "form-control is-invalid"
+          else class_ "form-control"
       , placeholder_ "(\\x.x) y"
       , value_ (model^.input)
       , onInput TextInput
       , onEnter Eval
       , autofocus_ True
       ]
-    , div_ [class_ "invalid-feedback"] [text (ms err)]
-    ]
-  | otherwise
-  = input_
-    [ type_ "text", class_ "form-control"
-    , placeholder_ "(\\x.x) y"
-    , value_ (model^.input)
-    , onInput TextInput
-    , onEnter Eval
-    , autofocus_ True
     ]
 
 form :: Model -> View Action
@@ -216,8 +208,8 @@ draw (root, (graph, redex)) depths xcoords = case Seq.index (graph^.nodes) root 
     rootX = xScale * Seq.index xcoords root
     rootY = yScale * Seq.index depths root
 
-renderGraph :: Either String (Int, [(Graph, Maybe Int)]) -> Int -> View Action
-renderGraph (Right (root, graphs)) index = let
+renderGraph :: (Int, [(Graph, Maybe Int)]) -> Int -> View Action
+renderGraph (root, graphs) index = let
   (graph, redex) = graphs !! index
   depths = computeDepths (root, graph) (Seq.replicate (Seq.length (graph^.nodes)) (-1)) 0
   (rightEdges, _, xcoords) = layout (root, graph) (Seq.replicate (Seq.length (graph^.nodes)) (-1)) (repeat 0)
@@ -229,11 +221,10 @@ renderGraph (Right (root, graphs)) index = let
      , viewBox_ ("-15 -15 " <> ms viewBoxWidth <> " " <> ms viewBoxHeight)
      ]
      (draw (root, (graph, redex)) depths xcoords)
-renderGraph (Left err) _ = text ""
 
 graphButtons :: Model -> View Action
 graphButtons model
-  | Right (_, graphs) <- model^.output
+  | Just (_, graphs) <- model ^. (output . graph)
   = div_ [Miso.id_ "graph-buttons"]
     [ div_ [class_ "btn-group"]
       [ button_
@@ -270,24 +261,44 @@ defInput model =
             , textProp "style" "padding:0"
             ]
             [ textarea_
-              [ type_ "text"
-              , class_ "form-control"
-              , rows_ "15"
-              , textProp "style" "border:0"
-              , onInput DefInput
-              , value_ (model^.definitions)
-              ]
-              []
+                ((if isJust $ model ^? output . inputError . _Just . _DefError
+                    then [class_ "form-control is-invalid"]
+                    else [class_ "form-control", textProp "style" "border:0"])
+                ++  [ type_ "text"
+                    , rows_ "15"
+                    , onInput DefInput
+                    , value_ (model^.definitions)
+                    ])
+                []
             ]
         ]
     ]
 
 graphView :: Model -> View Action
-graphView model =
-  div_ [Miso.id_ "graph"]
-  [ graphButtons model
-  , renderGraph (model^.output) (model^.graphIndex)
-  ]
+graphView model
+  | Just graphs <- model ^. (output . graph) =
+    div_ 
+      [Miso.id_ "graph"]
+      [ graphButtons model
+      , renderGraph graphs (model^.graphIndex)
+      ]
+  | Just (ExprError err) <- model ^. (output . inputError) =
+    div_ 
+      [Miso.id_ "graph"]
+      [
+    div_
+      [ class_ "alert alert-danger"
+      ]
+      [text (ms err)]]
+  | Just (DefError err) <- model ^. (output . inputError) =
+    div_ 
+      [Miso.id_ "graph"]
+      [
+    div_
+      [ class_ "alert alert-danger"
+      ]
+      [text (ms err)]]
+  | otherwise = text ""
 
 defAndGraph :: Model -> View Action
 defAndGraph model = div_ [Miso.id_ "def-graph-container"] [div_ [] [], defInput model, graphView model]  -- empty div to make collapse work
