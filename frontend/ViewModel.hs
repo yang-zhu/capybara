@@ -1,14 +1,16 @@
 module ViewModel(viewModel) where
 
-import Data.Foldable(toList)
-import Data.Sequence(Seq)
+import Data.Foldable (toList)
+import Data.Sequence (Seq)
 import qualified Data.Sequence as Seq
-import Data.Maybe(isJust, fromMaybe)
+import Data.Maybe (isJust, fromMaybe)
 import Control.Lens ((^.), _Just, (^?))
+import Control.Lens.Extras (is)
 import Miso
 import Miso.String (MisoString, ms)
 import Miso.Svg
 
+import Lexer
 import Parser
 import GraphReduction
 import Model
@@ -97,7 +99,7 @@ inputArea model =
       , if isJust $ model ^? output . inputError . _Just . _ExprError
           then class_ "form-control is-invalid"
           else class_ "form-control"
-      , placeholder_ "(\\x.x) y"
+      , placeholder_ "(\\x. x) y"
       , value_ (model^.input)
       , onInput TextInput
       , onEnter Eval
@@ -309,6 +311,11 @@ defInput model =
         ]
     ]
 
+composeErrorMsg :: (String, TokenWithPos) -> Bool -> String
+composeErrorMsg (msg, tok@(InvalidToken c, _, _)) isDefError = "Invalid character " ++ show c ++ " at position " ++ showPosition tok isDefError ++ "."
+composeErrorMsg (msg, (EndOfInput, _, _)) _ = msg ++ ", but found end of input."
+composeErrorMsg (msg, tok@(t, _, _)) isDefError = msg ++ ", but found " ++ show t ++ " at position " ++ showPosition tok isDefError ++ "."
+
 graphView :: Model -> View Action
 graphView model
   | Just graphs <- model ^. (output . graph) =
@@ -322,14 +329,14 @@ graphView model
       [ Miso.id_ "graph-area" ]
       [ div_
         [class_ "alert alert-danger"]
-        [text (ms err)]
+        [text (ms (composeErrorMsg err False))]
       ]
   | Just (DefError err) <- model ^. (output . inputError) =
     div_
       [ Miso.id_ "graph-area" ]
       [ div_
         [class_ "alert alert-danger"]
-        [text (ms err)]]
+        [text (ms (composeErrorMsg err True))]]
   | otherwise = text ""
 
 defAndGraph :: Model -> View Action

@@ -7,13 +7,13 @@ module GraphReduction
   , run
   ) where
 
-import qualified Data.Sequence as Seq
 import Data.Maybe (isJust)
+import Data.Sequence (Seq, (|>))
+import qualified Data.Sequence as Seq
 import Control.Monad.Trans.Reader
 import Control.Monad.Trans.State
 import Control.Monad.Trans.Class (lift)
 import Control.Lens (makeLenses, (^.), (.~), (%~))
-import Data.Sequence (Seq, (|>))
 
 import Parser
 

@@ -34,13 +34,13 @@ data Expression
   deriving Show
 
 data ParseError
-  = ExprError String
-  | DefError String
+  = ExprError (String, TokenWithPos)
+  | DefError (String, TokenWithPos)
   deriving Eq
 
 makePrisms ''ParseError
 
-newtype Parser a = Parser ([Token] -> Either String (a, [Token]))
+newtype Parser a = Parser ([TokenWithPos] -> Either (String, TokenWithPos) (a, [TokenWithPos]))
 
 instance Monad Parser where
   return :: a -> Parser a
@@ -64,7 +64,7 @@ instance Applicative Parser where
 
 instance Alternative Parser where
   empty :: Parser a
-  empty = Parser $ \_ -> Left ""
+  empty = Parser $ \_ -> Left ("unknown", (EndOfInput,0,0))
 
   (<|>) :: Parser a -> Parser a -> Parser a
   p1 <|> p2 = Parser $ \ts -> case runParser p1 ts of
@@ -72,10 +72,10 @@ instance Alternative Parser where
     Right res -> Right res
 
 
-parse :: Parser a -> String -> Either String a
+parse :: Parser a -> String -> Either (String, TokenWithPos) a
 parse p input = case tokenize input >>= runParser p of
   Left err -> Left err
-  Right (res, rest) -> if null rest then Right res else Left "parse error"
+  Right (res, rest) -> if null rest then Right res else Left ("Expected end of input", head rest)
 
 parseDefinitions :: String -> Either ParseError [Definition]
 parseDefinitions defs = either (Left . DefError) Right (parse (some definition) defs)
@@ -84,26 +84,25 @@ parseExpression :: String -> Either ParseError Expression
 parseExpression expr = either (Left . ExprError) Right (parse abstraction expr)
 
 -- strip off the Parser constructor
-runParser :: Parser a -> [Token] -> Either String (a, [Token])
+runParser :: Parser a -> [TokenWithPos] -> Either (String, TokenWithPos) (a, [TokenWithPos])
 runParser (Parser p) = p
 
 -- parse a token
-token :: Parser Token
-token = Parser $ \ts0 -> case ts0 of
-  [] -> Left "Expected a token, but found end of input."
+token :: Parser TokenWithPos
+token = Parser $ \case
+  [] -> Right ((EndOfInput,0,0), [])
   t : ts1 -> Right (t, ts1)
 
 -- check if the to-be-processed token matches the expected keyword
 matchKeyword :: String -> Parser ()
-matchKeyword tok = do
-  t <- token
-  case t of
-    Keyword kw -> if kw == tok then return () else empty
-    _ -> errorMsg $ "Expected keyword " ++ tok ++ ", but found " ++ show t
+matchKeyword tok = token >>= \case
+  (Keyword kw, _, _)
+    | kw == tok -> return ()
+  t -> errorMsg  ("Expected " ++ show tok) t
 
 -- abort parsing and deliver an error message
-errorMsg :: String -> Parser a
-errorMsg msg = Parser $ \_ -> Left msg
+errorMsg :: String -> TokenWithPos ->  Parser a
+errorMsg msg tok = Parser $ \_ -> Left (msg, tok)
 
 -- parse a definition
 definition :: Parser Definition
@@ -136,8 +135,6 @@ atom =
 
 -- parse a variable
 variable :: Parser String
-variable = do
-  t <- token
-  case t of
-    Variable v -> return v
-    _ -> errorMsg $ "Expected a variable, but found " ++ show t ++ "."
+variable = token >>= \case
+  (Variable v, _, _) -> return v
+  t -> errorMsg "Expected a variable" t

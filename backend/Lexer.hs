@@ -1,36 +1,64 @@
 module Lexer
-  ( Token (..)
+  ( Token(..)
+  , TokenWithPos
+  , _InvalidToken
+  , showPosition
   , tokenize
   )
 where
 
 import Data.Char (isAlpha, isAlphaNum, isSpace)
+import Control.Lens (makePrisms)
 
-
+type Row = Int
+type Col = Int
 type LexError = String
+
+type Pos = (Row, Col)
 
 data Token
   = Variable String
   | Keyword String
+  | InvalidToken Char
+  | EndOfInput
   deriving Eq
 
-instance Show Token where
-  show (Variable v) = "variable " ++ v
-  show (Keyword kw) = "'" ++ kw ++ "'"
+makePrisms ''Token
 
+type TokenWithPos = (Token, Row, Col)
+
+instance Show Token where
+  show (Variable v) = "'" ++ v ++ "'"
+  show (Keyword kw) = "'" ++ kw ++ "'"
+  show (InvalidToken c) = show c
+  show EndOfInput = ""
+
+
+showPosition :: TokenWithPos -> Bool -> String
+showPosition (tok, row, col) showRow = if showRow then show row ++ ":" ++ show col else show col 
 
 symbols :: [Char]
 symbols = "λ.()=;"
 
-isIdentifierChar :: Char -> Bool
-isIdentifierChar c = isAlphaNum c || c == '_'
+strWithPos :: Row -> Col -> String -> [(Char, Row, Col)]
+strWithPos _ _ [] = []
+strWithPos row col (c:cs)
+  | c == '\n' = (c, row, col) : strWithPos (row+1) 1 cs 
+  | otherwise = (c, row, col) : strWithPos row (col+1) cs
 
-tokenize :: String -> Either LexError [Token]
-tokenize [] = return []
-tokenize (c : cs)
-  | isSpace c = tokenize cs
-  | isAlpha c && c /= 'λ' =
-    let (rest, cs') = span isIdentifierChar cs
-     in (Variable (c:rest) :) <$> tokenize cs'
-  | c `elem` symbols = (Keyword [c] :) <$> tokenize cs
-  | otherwise = Left $ show c ++ " is an invalid symbol"
+isIdentifierChar :: (Char, Row, Col) -> Bool
+isIdentifierChar (c, _, _) = isAlphaNum c || c == '_'
+
+charsToTokens :: [(Char, Row, Col)] -> Either (LexError, TokenWithPos) [TokenWithPos]
+charsToTokens [] = return []
+charsToTokens ((c, row, col) : cs)
+  | isSpace c = charsToTokens cs
+  | isAlpha c && c /= 'λ' = let
+    (cs', rest) = span isIdentifierChar cs
+    name = c : map (\(c,_,_) -> c) cs'
+    in ((Variable name, row, col) :) <$> charsToTokens rest
+  | c `elem` symbols = ((Keyword [c], row, col) :) <$> charsToTokens cs
+  | otherwise = Left ("Found invalid character", (InvalidToken c, row, col))
+
+tokenize :: String -> Either (LexError, TokenWithPos) [TokenWithPos]
+tokenize = charsToTokens . strWithPos 1 1
