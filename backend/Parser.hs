@@ -68,7 +68,7 @@ instance Alternative Parser where
 
   (<|>) :: Parser a -> Parser a -> Parser a
   p1 <|> p2 = Parser $ \ts -> case runParser p1 ts of
-    Left _ -> runParser p2 ts
+    err@(Left (_, tok)) -> if null ts || tok == head ts then runParser p2 ts else err
     Right res -> Right res
 
 
