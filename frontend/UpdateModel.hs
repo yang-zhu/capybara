@@ -25,17 +25,16 @@ eval model
         Right defs -> Output (Just (firstStep (model^.strategy) term defs)) Nothing defs
 
 next :: Model -> Model
-next model = model & (output . graph . _Just . _2) %~ (newGraph :)
+next model = model & (output . graph . _Just) %~ (newGraph :)
   where
     newGraph =
       nextGraph
         (model ^. strategy)
-        (model ^?! (output . graph . _Just . _1))
-        (model ^?! (output . graph . _Just . _2 . _head . _2))
+        (model ^?! (output . graph . _Just . _head . _2))
         (model ^. (output . definitions))
 
 prev :: Model -> Model
-prev = (output . graph . _Just . _2) %~ drop 1
+prev = (output . graph . _Just) %~ drop 1
 
 updateModel :: Action -> Model -> Effect Action Model
 updateModel Eval model = noEff $ eval model

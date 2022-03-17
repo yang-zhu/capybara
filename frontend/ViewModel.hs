@@ -240,10 +240,11 @@ draw (root, (graph, redex)) depths xcoords = case Seq.index (graph^.nodes) root 
     rootX = xScale * Seq.index xcoords root
     rootY = yScale * Seq.index depths root
 
-renderGraph :: (Int, [(Maybe Int, Graph)]) -> View Action
-renderGraph (root, graph1:graph2:graphs) = let
+renderGraph :: [(Maybe Int, Graph)] -> View Action
+renderGraph (graph1:graph2:graphs) = let
   (redex, _) = graph1
   (_, graph) = graph2
+  root = graph ^. rootIndex
   depths = computeDepths (root, graph) (Seq.replicate (Seq.length (graph^.nodes)) (-1)) 0
   (rightEdges, _, xcoords) = layout (root, graph) (Seq.replicate (Seq.length (graph^.nodes)) (-1)) (repeat 0)
   viewBoxWidth = xScale * maximum (take (Seq.length (graph^.nodes)) rightEdges) + 30
@@ -258,7 +259,7 @@ renderGraph _ = undefined
 
 graphButtons :: Model -> View Action
 graphButtons model
-  | Just (_, graphs) <- model ^. (output . graph) =
+  | Just graphs <- model ^. (output . graph) =
     div_
       [ Miso.id_ "graph-buttons" ]
       [ div_
@@ -266,14 +267,14 @@ graphButtons model
           [ button_
               [ type_ "button"
               , class_ "btn btn-outline-primary"
-              , disabled_ (null $ drop 2 $ model ^?! (output . graph . _Just . _2))
+              , disabled_ (null $ drop 2 $ model ^?! (output . graph . _Just))
               , onClick Prev
               ]
               [ text "◀" ]
           , button_
               [ type_ "button"
               , class_ "btn btn-outline-primary"
-              , disabled_ (isNothing $ model ^?! (output . graph . _Just . _2 . _head . _1))
+              , disabled_ (isNothing $ model ^?! (output . graph . _Just . _head . _1))
               , onClick Next
               ]
               [ text "▶" ]

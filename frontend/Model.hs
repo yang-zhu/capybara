@@ -9,7 +9,7 @@ import GraphReduction
 
 
 data Output = Output
-  { _graph :: Maybe (Int, [(Maybe Int, Graph)])
+  { _graph :: Maybe [(Maybe Int, Graph)]
   , _inputError :: Maybe ParseError
   , _definitions :: [Definition]
   }

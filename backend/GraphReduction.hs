@@ -3,8 +3,7 @@ module GraphReduction
   , Graph
   , EvalStrategy(..)
   , nodes
-  , counter
-  -- , run
+  , rootIndex
   , firstStep
   , nextGraph
   ) where
@@ -15,7 +14,7 @@ import qualified Data.Sequence as Seq
 import Control.Monad.Trans.Reader
 import Control.Monad.Trans.State
 import Control.Monad.Trans.Class (lift)
-import Control.Lens (makeLenses, (^.), (.~), (%~))
+import Control.Lens (makeLenses, (&), (^.), (.~), (%~))
 
 import Parser
 
@@ -29,6 +28,7 @@ data Node
 data Graph = Graph
   { _nodes :: Seq Node
   , _counter :: Int
+  , _rootIndex :: Int
   }
   deriving Eq
 
@@ -199,12 +199,13 @@ oneStepReduce root defs = do
 --   (root, graph) = runState (astToGraph renamedExpr) Graph{_nodes=Seq.empty, _counter=counter}
 --   in (root, reduce strat root graph defs)
 
-firstStep :: EvalStrategy -> Expression -> [Definition] -> (Int, [(Maybe Int, Graph)])
+firstStep :: EvalStrategy -> Expression -> [Definition] -> [(Maybe Int, Graph)]
 firstStep strat expr defs = let
   (renamedExpr, counter) = runState (runReaderT (alphaRename expr) []) 1
-  (root, graph) = runState (astToGraph renamedExpr) Graph{_nodes=Seq.empty, _counter=counter}
-  (redex, graph') = nextGraph strat root graph defs
-  in (root, [(redex, graph'), (Nothing, graph)])
+  (root, graph) = runState (astToGraph renamedExpr) Graph{_nodes=Seq.empty, _counter=counter, _rootIndex=negate 1}
+  graph' = graph & rootIndex .~ root
+  (redex, graph'') = nextGraph strat graph' defs
+  in [(redex, graph''), (Nothing, graph')]
 
-nextGraph :: EvalStrategy -> Int -> Graph -> [Definition] -> (Maybe Int, Graph)
-nextGraph strat root graph defs = runState (runReaderT (oneStepReduce root defs) strat) graph
+nextGraph :: EvalStrategy -> Graph -> [Definition] -> (Maybe Int, Graph)
+nextGraph strat graph defs = runState (runReaderT (oneStepReduce (graph^.rootIndex) defs) strat) graph
