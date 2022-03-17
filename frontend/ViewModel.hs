@@ -112,14 +112,14 @@ form m =
     [Miso.id_ "form"]
     (defMenu : inputArea m : formButtons m)
 
-computeDepths :: (Int, Graph) -> Seq Depth -> Depth -> Seq Depth
-computeDepths (root, graph) depths currDepth
+computeDepths :: Graph -> Int -> Seq Depth -> Depth -> Seq Depth
+computeDepths graph root depths currDepth
   | currDepth > Seq.index depths root = case Seq.index (graph^.nodes) root of
       VarNode v -> depths'
-      LamNode v e -> computeDepths (e, graph) depths' currDepth'
+      LamNode v e -> computeDepths graph e depths' currDepth'
       AppNode e1 e2 -> let
-        depths'' = computeDepths (e1, graph) depths' currDepth'
-        in computeDepths (e2, graph) depths'' currDepth'
+        depths'' = computeDepths graph e1 depths' currDepth'
+        in computeDepths graph e2 depths'' currDepth'
   | otherwise = depths
   where
     depths' = Seq.update root currDepth depths
@@ -141,32 +141,32 @@ stringWidth s = 2 * foldl (\acc c -> charWidth c + acc) 0 s
     charWidth :: Char -> Double
     charWidth c = fromMaybe defaultLetterWidth (letterWidthTable !? fromEnum c)
 
-layout :: (Int, Graph) -> Seq XCoord -> [XCoord] -> ([XCoord], XCoord, Seq XCoord)
-layout (root, graph) xcoords (leftEdge0:leftEdge1:leftEdges)  -- [XCoord] is an infinite list
+layout :: Graph -> Int -> Seq XCoord -> [XCoord] -> ([XCoord], XCoord, Seq XCoord)
+layout graph root xcoords (leftEdge0:leftEdge1:leftEdges)  -- [XCoord] is an infinite list
   | Seq.index xcoords root == -1 = case Seq.index (graph^.nodes) root of
       VarNode v -> let
         nodeWidth = max 4 (stringWidth v)
         in ((leftEdge0+nodeWidth):leftEdge1:leftEdges, leftEdge0+nodeWidth/2, Seq.update root (leftEdge0+nodeWidth/2) xcoords)  -- (right edges, root, xcoords)
       LamNode v e -> let
-        (eRightEdges, eRoot, xcoords') = layout (e, graph) xcoords (max leftEdge0 leftEdge1 : leftEdges)
+        (eRightEdges, eRoot, xcoords') = layout graph e xcoords (max leftEdge0 leftEdge1 : leftEdges)
         in ((eRoot+2):eRightEdges, eRoot, Seq.update root eRoot xcoords')
       AppNode e1 e2
         | e1 == e2 -> let
-            (eRightEdges, eRoot, xcoords') = layout (e1, graph) xcoords (max leftEdge0 leftEdge1 : leftEdges)
+            (eRightEdges, eRoot, xcoords') = layout graph e1 xcoords (max leftEdge0 leftEdge1 : leftEdges)
             in ((eRoot+2):eRightEdges, eRoot, Seq.update root eRoot xcoords')
         | otherwise -> let
-            (e1RightEdges, e1Root, xcoords') = layout (e1, graph) xcoords (max (leftEdge0-2) leftEdge1:leftEdges)
-            (e2RightEdges, e2Root, xcoords'') = layout (e2, graph) xcoords' e1RightEdges
+            (e1RightEdges, e1Root, xcoords') = layout graph e1 xcoords (max (leftEdge0-2) leftEdge1:leftEdges)
+            (e2RightEdges, e2Root, xcoords'') = layout graph e2 xcoords' e1RightEdges
             rootXCoord = (e1Root + e2Root) / 2
             in ((rootXCoord+2):e2RightEdges, rootXCoord, Seq.update root rootXCoord xcoords'')
   | otherwise = ((leftEdge0+4):leftEdge1:leftEdges, leftEdge0+2, xcoords)
-layout _ _ _ = undefined
+layout _ _ _ _ = undefined
 
 xScale = 10
 yScale = 40
 
-draw :: (Int, (Graph, Maybe Int)) -> Seq Depth -> Seq XCoord -> [View Action]
-draw (root, (graph, redex)) depths xcoords = case Seq.index (graph^.nodes) root of
+draw :: (Maybe Int, Graph) -> Int -> Seq Depth -> Seq XCoord -> [View Action]
+draw (redex, graph) root depths xcoords = case Seq.index (graph^.nodes) root of
   VarNode v ->
     [ text_
         [ textAnchor_ "middle"
@@ -196,7 +196,7 @@ draw (root, (graph, redex)) depths xcoords = case Seq.index (graph^.nodes) root 
             ]
             []
         ]
-        ++ draw (e, (graph, redex)) depths xcoords
+        ++ draw (redex, graph) e depths xcoords
   AppNode e1 e2 -> let
     e1X = xScale * Seq.index xcoords e1
     e1Y = yScale * Seq.index depths e1
@@ -234,8 +234,8 @@ draw (root, (graph, redex)) depths xcoords = case Seq.index (graph^.nodes) root 
             ]
             []
         ]
-        ++ draw (e1, (graph, redex)) depths xcoords
-        ++ draw (e2, (graph, redex)) depths xcoords
+        ++ draw (redex, graph) e1 depths xcoords
+        ++ draw (redex, graph) e2 depths xcoords
   where
     rootX = xScale * Seq.index xcoords root
     rootY = yScale * Seq.index depths root
@@ -245,8 +245,8 @@ renderGraph (graph1:graph2:graphs) = let
   (redex, _) = graph1
   (_, graph) = graph2
   root = graph ^. rootIndex
-  depths = computeDepths (root, graph) (Seq.replicate (Seq.length (graph^.nodes)) (-1)) 0
-  (rightEdges, _, xcoords) = layout (root, graph) (Seq.replicate (Seq.length (graph^.nodes)) (-1)) (repeat 0)
+  depths = computeDepths graph root (Seq.replicate (Seq.length (graph^.nodes)) (-1)) 0
+  (rightEdges, _, xcoords) = layout graph root (Seq.replicate (Seq.length (graph^.nodes)) (-1)) (repeat 0)
   viewBoxWidth = xScale * maximum (take (Seq.length (graph^.nodes)) rightEdges) + 30
   viewBoxHeight = yScale * maximum depths + 30
   in svg_
@@ -254,7 +254,7 @@ renderGraph (graph1:graph2:graphs) = let
       , Miso.Svg.height_ (ms (1.5 * fromIntegral viewBoxHeight :: Double))
       , viewBox_ ("-15 -15 " <> ms viewBoxWidth <> " " <> ms viewBoxHeight)
       ]
-      (draw (root, (graph, redex)) depths xcoords)
+      (draw (redex, graph) root depths xcoords)
 renderGraph _ = undefined
 
 graphButtons :: Model -> View Action
