@@ -83,11 +83,11 @@ formButtons model =
     stratToStr CallByValue = "call-by-value"
 
 onEnter :: Action -> Attribute Action
-onEnter act = onKeyDown (hitEnter act)
+onEnter act = onKeyDown hitEnter
   where
-    hitEnter :: Action -> KeyCode -> Action
-    hitEnter act (KeyCode 13) = act
-    hitEnter _ _ = NoOp
+    hitEnter :: KeyCode -> Action
+    hitEnter (KeyCode 13) = act
+    hitEnter _ = NoOp
 
 inputArea :: Model -> View Action
 inputArea model =
@@ -251,7 +251,7 @@ renderGraph (graph1:graph2:graphs) = let
   viewBoxHeight = yScale * maximum depths + 30
   in svg_
       [ Miso.Svg.width_ (ms (1.5 * viewBoxWidth))
-      , Miso.Svg.height_ (ms (1.5 * fromIntegral viewBoxHeight :: Double))
+      -- , Miso.Svg.height_ (ms (1.5 * fromIntegral viewBoxHeight :: Double))
       , viewBox_ ("-15 -15 " <> ms viewBoxWidth <> " " <> ms viewBoxHeight)
       ]
       (draw (redex, graph) root depths xcoords)

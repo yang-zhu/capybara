@@ -184,21 +184,6 @@ oneStepReduce root defs = do
     isDef :: String -> [Definition] -> Bool
     isDef = (isJust .) . lookUpInDefs
 
--- reduce the complete graph
--- reduce :: EvalStrategy -> Int -> Graph -> [Definition] -> [(Graph, Maybe Int)]
--- reduce strat root graph defs = let
---    ((reduced, redex), graph') = runState (runReaderT (oneStepReduce root defs) strat) graph
---    in if reduced
---         then (graph, redex) : reduce strat root graph' defs
---         else [(graph, redex)]
-
--- run the reduction
--- run :: EvalStrategy -> Expression -> [Definition] -> (Int, [(Graph, Maybe Int)])
--- run strat expr defs = let
---   (renamedExpr, counter) = runState (runReaderT (alphaRename expr) []) 1
---   (root, graph) = runState (astToGraph renamedExpr) Graph{_nodes=Seq.empty, _counter=counter}
---   in (root, reduce strat root graph defs)
-
 firstStep :: EvalStrategy -> Expression -> [Definition] -> [(Maybe Int, Graph)]
 firstStep strat expr defs = let
   (renamedExpr, counter) = runState (runReaderT (alphaRename expr) []) 1

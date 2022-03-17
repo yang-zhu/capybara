@@ -34,6 +34,10 @@ svg text {
   font-family: "Brygada 1918", serif;
 }
 
+svg {
+  max-width: 100%;
+}
+
 #form {
   display: flex;
   flex-direction: row;
