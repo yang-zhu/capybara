@@ -4,7 +4,9 @@ module GraphReduction
   , EvalStrategy(..)
   , nodes
   , counter
-  , run
+  -- , run
+  , firstStep
+  , nextGraph
   ) where
 
 import Data.Maybe (isJust)
@@ -82,6 +84,21 @@ updateNode old new = do
   graph <- get
   modify $ nodes %~ Seq.update old (Seq.index (graph^.nodes) new)
 
+copy :: Int -> State Graph Int
+copy index = do
+  node <- getNode index
+  copyNode node
+
+copyNode :: Node -> State Graph Int
+copyNode node@(VarNode v) = addNode node
+copyNode (LamNode v e) = do
+  e' <- copy e
+  addNode (LamNode v e')
+copyNode (AppNode e1 e2) = do
+  e1' <- copy e1
+  e2' <- copy e2
+  addNode (AppNode e1' e2')
+
 -- convert the parse tree to a graph
 astToGraph :: Expression -> State Graph Int
 astToGraph (Var v) = addNode (VarNode v)
@@ -107,21 +124,6 @@ ifParamInBody param body = do
       res2 <- ifParamInBody param e2
       return $ res1 || res2
 
-copy :: Int -> State Graph Int
-copy index = do
-  node <- getNode index
-  copyNode node
-
-copyNode :: Node -> State Graph Int
-copyNode node@(VarNode v) = addNode node
-copyNode (LamNode v e) = do
-  e' <- copy e
-  addNode (LamNode v e')
-copyNode (AppNode e1 e2) = do
-  e1' <- copy e1
-  e2' <- copy e2
-  addNode (AppNode e1' e2')
-
 instantiate :: String -> Int -> Int -> ReaderT EvalStrategy (State Graph) Int
 instantiate param body arg = do
   strat <- ask
@@ -144,7 +146,7 @@ instantiate param body arg = do
     else return body
 
 -- search for redex in an expression and do one reduction
-oneStepReduce :: Int -> [Definition] -> ReaderT EvalStrategy (State Graph) (Bool, Maybe Int)
+oneStepReduce :: Int -> [Definition] -> ReaderT EvalStrategy (State Graph) (Maybe Int)
 oneStepReduce root defs = do
   strat <- ask
   rootNode <- lift (getNode root)
@@ -156,7 +158,7 @@ oneStepReduce root defs = do
         then do
           inst <- instantiate param body e2
           lift $ updateNode root inst
-          return (True, Just root)
+          return (Just root)
         else oneStepReduce e2 defs
       _ -> oneStepReduce e1 defs
     VarNode v -> case lookUpInDefs v defs of
@@ -166,9 +168,9 @@ oneStepReduce root defs = do
         lift $ modify $ counter .~ counter'
         body <- lift $ astToGraph bodyExpr'
         lift $ updateNode root body
-        return (True, Just root)
-      Nothing -> return (False, Nothing)
-    _ -> return (False, Nothing)
+        return (Just root)
+      Nothing -> return Nothing
+    _ -> return Nothing
   where
     isValue :: Node -> Bool
     isValue (AppNode _ _) = False
@@ -183,16 +185,26 @@ oneStepReduce root defs = do
     isDef = (isJust .) . lookUpInDefs
 
 -- reduce the complete graph
-reduce :: EvalStrategy -> Int -> Graph -> [Definition] -> [(Graph, Maybe Int)]
-reduce strat root graph defs = let
-   ((reduced, redex), graph') = runState (runReaderT (oneStepReduce root defs) strat) graph
-   in if reduced
-        then (graph, redex) : reduce strat root graph' defs
-        else [(graph, redex)]
+-- reduce :: EvalStrategy -> Int -> Graph -> [Definition] -> [(Graph, Maybe Int)]
+-- reduce strat root graph defs = let
+--    ((reduced, redex), graph') = runState (runReaderT (oneStepReduce root defs) strat) graph
+--    in if reduced
+--         then (graph, redex) : reduce strat root graph' defs
+--         else [(graph, redex)]
 
 -- run the reduction
-run :: EvalStrategy -> Expression -> [Definition] -> (Int, [(Graph, Maybe Int)])
-run strat expr defs = let
+-- run :: EvalStrategy -> Expression -> [Definition] -> (Int, [(Graph, Maybe Int)])
+-- run strat expr defs = let
+--   (renamedExpr, counter) = runState (runReaderT (alphaRename expr) []) 1
+--   (root, graph) = runState (astToGraph renamedExpr) Graph{_nodes=Seq.empty, _counter=counter}
+--   in (root, reduce strat root graph defs)
+
+firstStep :: EvalStrategy -> Expression -> [Definition] -> (Int, [(Maybe Int, Graph)])
+firstStep strat expr defs = let
   (renamedExpr, counter) = runState (runReaderT (alphaRename expr) []) 1
   (root, graph) = runState (astToGraph renamedExpr) Graph{_nodes=Seq.empty, _counter=counter}
-  in (root, reduce strat root graph defs)
+  (redex, graph') = nextGraph strat root graph defs
+  in (root, [(redex, graph'), (Nothing, graph)])
+
+nextGraph :: EvalStrategy -> Int -> Graph -> [Definition] -> (Maybe Int, Graph)
+nextGraph strat root graph defs = runState (runReaderT (oneStepReduce root defs) strat) graph

@@ -12,9 +12,8 @@ import Control.Lens (makePrisms)
 
 type Row = Int
 type Col = Int
-type LexError = String
-
 type Pos = (Row, Col)
+type LexError = String
 
 data Token
   = Variable String

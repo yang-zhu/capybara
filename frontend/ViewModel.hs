@@ -3,9 +3,8 @@ module ViewModel(viewModel) where
 import Data.Foldable (toList)
 import Data.Sequence (Seq)
 import qualified Data.Sequence as Seq
-import Data.Maybe (isJust, fromMaybe)
-import Control.Lens ((^.), _Just, (^?))
-import Control.Lens.Extras (is)
+import Data.Maybe (isJust, isNothing, fromMaybe)
+import Control.Lens ((^.), (^?), (^?!), _1, _2, _Just, _head)
 import Miso
 import Miso.String (MisoString, ms)
 import Miso.Svg
@@ -100,8 +99,8 @@ inputArea model =
           then class_ "form-control is-invalid"
           else class_ "form-control"
       , placeholder_ "(\\x. x) y"
-      , value_ (model^.input)
-      , onInput TextInput
+      , value_ (model^.termInput)
+      , onInput TermInput
       , onEnter Eval
       , autofocus_ True
       ]
@@ -241,9 +240,10 @@ draw (root, (graph, redex)) depths xcoords = case Seq.index (graph^.nodes) root 
     rootX = xScale * Seq.index xcoords root
     rootY = yScale * Seq.index depths root
 
-renderGraph :: (Int, [(Graph, Maybe Int)]) -> Int -> View Action
-renderGraph (root, graphs) index = let
-  (graph, redex) = graphs !! index
+renderGraph :: (Int, [(Maybe Int, Graph)]) -> View Action
+renderGraph (root, graph1:graph2:graphs) = let
+  (redex, _) = graph1
+  (_, graph) = graph2
   depths = computeDepths (root, graph) (Seq.replicate (Seq.length (graph^.nodes)) (-1)) 0
   (rightEdges, _, xcoords) = layout (root, graph) (Seq.replicate (Seq.length (graph^.nodes)) (-1)) (repeat 0)
   viewBoxWidth = xScale * maximum (take (Seq.length (graph^.nodes)) rightEdges) + 30
@@ -254,6 +254,7 @@ renderGraph (root, graphs) index = let
       , viewBox_ ("-15 -15 " <> ms viewBoxWidth <> " " <> ms viewBoxHeight)
       ]
       (draw (root, (graph, redex)) depths xcoords)
+renderGraph _ = undefined
 
 graphButtons :: Model -> View Action
 graphButtons model
@@ -265,14 +266,14 @@ graphButtons model
           [ button_
               [ type_ "button"
               , class_ "btn btn-outline-primary"
-              , disabled_ (model^.graphIndex == 0)
+              , disabled_ (null $ drop 2 $ model ^?! (output . graph . _Just . _2))
               , onClick Prev
               ]
               [ text "◀" ]
           , button_
               [ type_ "button"
               , class_ "btn btn-outline-primary"
-              , disabled_ (model^.graphIndex == length graphs - 1)
+              , disabled_ (isNothing $ model ^?! (output . graph . _Just . _2 . _head . _1))
               , onClick Next
               ]
               [ text "▶" ]
@@ -280,8 +281,8 @@ graphButtons model
       ]
   | otherwise = text ""
 
-defInput :: Model -> View Action
-defInput model =
+defArea :: Model -> View Action
+defArea model =
   div_
     [ class_ "collapse collapse-horizontal"
     , Miso.id_ "definitions"
@@ -304,7 +305,7 @@ defInput model =
                 ++  [ type_ "text"
                     , rows_ "15"
                     , onInput DefInput
-                    , value_ (model^.definitions)
+                    , value_ (model^.defInput)
                     ])
                 []
             ]
@@ -322,7 +323,7 @@ graphView model
     div_
       [ Miso.id_ "graph-area" ]
       [ graphButtons model
-      , renderGraph graphs (model^.graphIndex)
+      , renderGraph graphs
       ]
   | Just (ExprError err) <- model ^. (output . inputError) =
     div_
@@ -344,7 +345,7 @@ defAndGraph model =
   div_
     [ Miso.id_ "def-graph-container" ]
     [ div_ [] []  -- empty div to make collapse work
-    , defInput model
+    , defArea model
     , graphView model
     ]
 

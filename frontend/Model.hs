@@ -2,26 +2,26 @@ module Model where
 
 import Control.Lens (makeLenses)
 import Miso
-import Miso.String
+import Miso.String ( MisoString )
 
 import Parser
 import GraphReduction
 
 
 data Output = Output
-  { _graph :: Maybe (Int, [(Graph, Maybe Int)])
+  { _graph :: Maybe (Int, [(Maybe Int, Graph)])
   , _inputError :: Maybe ParseError
+  , _definitions :: [Definition]
   }
   deriving Eq
 
 makeLenses ''Output
 
 data Model = Model
-  { _input :: MisoString
-  , _definitions :: MisoString
+  { _termInput :: MisoString
+  , _defInput :: MisoString
   , _strategy :: EvalStrategy
   , _output :: Output
-  , _graphIndex :: Int
   }
   deriving Eq
 
@@ -29,7 +29,7 @@ makeLenses ''Model
 
 data Action
   = Eval
-  | TextInput MisoString
+  | TermInput MisoString
   | DefInput MisoString
   | CBNeed
   | CBName
@@ -38,17 +38,15 @@ data Action
   | Next
   | Prev
   | NoOp
-  deriving (Show, Eq)
 
 
 initialModel :: Model
 initialModel = Model
-  { _input = ""
-  , _definitions
+  { _termInput = ""
+  , _defInput
       = "True = λx.λy.x;\n\
         \False = λx.λy.y;\n\
         \not = λx.x False True;\n"
   , _strategy = CallByNeed
-  , _output = Output Nothing Nothing
-  , _graphIndex = 0
+  , _output = Output Nothing Nothing []
   }

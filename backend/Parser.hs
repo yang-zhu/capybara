@@ -12,9 +12,9 @@ where
 
 import Control.Applicative (Alternative (..))
 import Control.Lens(makePrisms)
+
 import Lexer
 
--- import Debug.Trace (trace)
 
 {-
 Grammar:
@@ -26,12 +26,13 @@ Atom ::= Variable | "(" Abstraction ")"
 -}
 
 data Definition = Def String Expression
+  deriving Eq
 
 data Expression
   = Var String
   | Lam String Expression
   | App Expression Expression
-  deriving Show
+  deriving (Show, Eq)
 
 data ParseError
   = ExprError (String, TokenWithPos)
