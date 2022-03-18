@@ -1,8 +1,7 @@
 module Model where
 
 import Control.Lens (makeLenses)
-import Miso
-import Miso.String ( MisoString )
+import Miso.String (MisoString)
 
 import Parser
 import GraphReduction

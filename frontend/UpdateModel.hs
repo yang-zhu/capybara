@@ -1,7 +1,7 @@
 module UpdateModel(updateModel) where
 
 import Control.Lens ((&), (^.), (%~), (.~), (^?!), _1, _2, _Just, _head)
-import Miso
+import Miso (noEff, Effect)
 import Miso.String (MisoString, fromMisoString, toMisoString)
 
 import Lexer
@@ -10,9 +10,12 @@ import GraphReduction
 import Model
 
 
+-- | Turns the backslashes in the input into λ symbols
 turnBackslashIntoLambda :: MisoString -> MisoString
-turnBackslashIntoLambda = toMisoString . Prelude.map (\c -> if c =='\\' then 'λ' else c) . fromMisoString
+turnBackslashIntoLambda = toMisoString . map (\c -> if c =='\\' then 'λ' else c) . fromMisoString
 
+-- | Updates the model when the Eval action is triggered.
+-- Parses the input term and definitions, generates the first two graphs.
 eval :: Model -> Model
 eval model
   | model^.termInput == "" = model & output .~ Output Nothing Nothing []
@@ -24,6 +27,9 @@ eval model
         Left err -> Output Nothing (Just err) []
         Right defs -> Output (Just (firstStep (model^.strategy) term defs)) Nothing defs
 
+-- | Updates the model when the Next action is triggered.
+-- Compute the next graph and cons it to the list of already computed graphs.
+-- To handle divergent terms, a new graph is only computed when the Next action is triggered.
 next :: Model -> Model
 next model = model & (output . graph . _Just) %~ (newGraph :)
   where
@@ -33,6 +39,8 @@ next model = model & (output . graph . _Just) %~ (newGraph :)
         (model ^?! (output . graph . _Just . _head . _2))
         (model ^. (output . definitions))
 
+-- | Updates the model when the Prev action is triggered.
+-- Removes the most recent graph from the list of already computed graphs.
 prev :: Model -> Model
 prev = (output . graph . _Just) %~ drop 1
 

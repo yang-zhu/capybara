@@ -75,15 +75,17 @@ instance Alternative Parser where
     err@(Left (_, tok)) -> if null ts || tok == head ts then runParser p2 ts else err
     Right res -> Right res
 
-
+-- Tokenizes the input and parses the tokens with a given parser.
 parse :: Parser a -> String -> Either (String, TokenWithPos) a
 parse p input = case tokenize input >>= runParser p of
   Left err -> Left err
   Right (res, rest) -> if null rest then Right res else Left ("Expected end of input", head rest)
 
+-- Tokenizes the definition string, parses the tokens and generates a list of definitions.
 parseDefinitions :: String -> Either ParseError [Definition]
 parseDefinitions defs = either (Left . DefError) Right (parse (some definition) defs)
 
+-- Tokenizes the term string, parses the tokens and generates an expression syntax tree.
 parseExpression :: String -> Either ParseError Expression
 parseExpression expr = either (Left . ExprError) Right (parse abstraction expr)
 

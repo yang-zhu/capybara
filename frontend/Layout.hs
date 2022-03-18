@@ -15,9 +15,12 @@ import Control.Monad.Trans.Class (lift)
 import Control.Lens ((^.))
 import GraphReduction
 
+
 type Depth = Int
 type XCoord = Double
 
+
+-- | Computes depths of all the nodes in a graph.
 computeDepths :: Int -> Depth -> ReaderT Graph (State (Seq Depth)) ()
 computeDepths root currDepth = do
   graph <- ask
@@ -36,20 +39,27 @@ computeDepths root currDepth = do
 letterWidthTable = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.2490234375,0.33359375,0.40859375,0.5,0.5,0.83359375,0.778125,0.18046875,0.33359375,0.33359375,0.5,0.5640625,0.25,0.33359375,0.25,0.278125,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.278125,0.278125,0.5640625,0.5640625,0.5640625,0.44453125,0.92109375,0.72265625,0.6671875,0.6671875,0.72265625,0.6109375,0.55625,0.72265625,0.72265625,0.33359375,0.38984375,0.72265625,0.6109375,0.88984375,0.72265625,0.72265625,0.55625,0.72265625,0.6671875,0.55625,0.6109375,0.72265625,0.72265625,0.94453125,0.72265625,0.72265625,0.6109375,0.33359375,0.33984375,0.33359375,0.46953125,0.5,0.343359375,0.44453125,0.5,0.44453125,0.5,0.44453125,0.3828125,0.5,0.5,0.278125,0.3357421875,0.5,0.278125,0.778125,0.5,0.5,0.5,0.5,0.33642578125,0.38984375,0.27880859375,0.5,0.5,0.72265625,0.5,0.5,0.44453125,0.48046875,0.20078125,0.48046875,0.54140625]
 defaultLetterWidth = 0.5122738486842104
 
+-- | Safe version of (!!) operator
 (!?) :: [a] -> Int -> Maybe a
 [] !? _ = Nothing
 (x:xs) !? i
   | i == 0 = Just x
   | otherwise = xs !? (i - 1)
 
+-- | Computes the width of an identifier
 stringWidth :: String -> Double
 stringWidth s = 2 * foldl (\acc c -> charWidth c + acc) 0 s
   where
     charWidth :: Char -> Double
     charWidth c = fromMaybe defaultLetterWidth (letterWidthTable !? fromEnum c)
 
-layout :: Int -> Depth -> [XCoord] -> ReaderT Graph (ReaderT (Seq Depth) (State (Seq XCoord))) ([XCoord], XCoord)
-layout root currDepth (leftEdge0:leftEdge1:leftEdges) = do  -- [XCoord] is an infinite list
+-- | Computes x-coordinates of all the nodes in a graph.
+layout :: Int       -- ^ the root index of the current subgraph
+       -> Depth     -- ^ the current depth
+       -> [XCoord]  -- ^ infinite list of left boundaries for new nodes, the i-th element refers to currDepth+i
+       -> ReaderT Graph (ReaderT (Seq Depth) (State (Seq XCoord))) ([XCoord], XCoord)
+                    -- ^ the result is (the right boundary of the processed nodes, the position of the root node of the subgraph)                  
+layout root currDepth (leftEdge0:leftEdge1:leftEdges) = do
   graph <- ask
   depths <- lift ask
   xcoords <- lift2 get
