@@ -1,6 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@500&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Brygada+1918&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Ubuntu+Mono&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Fira+Mono&display=swap');
 
 body {
   margin: 10px;
@@ -17,7 +18,7 @@ img {
 }
 
 .form-control {
-  font-family: "Ubuntu Mono", monospace;
+  font-family: "Fira Mono", monospace;
   font-size: large;
 }
 

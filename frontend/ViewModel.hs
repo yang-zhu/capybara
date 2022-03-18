@@ -13,6 +13,7 @@ import Lexer
 import Parser
 import GraphReduction
 import Model
+import GHC.Float (int2Double)
 
 
 type Depth = Int
@@ -141,26 +142,29 @@ stringWidth s = 2 * foldl (\acc c -> charWidth c + acc) 0 s
     charWidth :: Char -> Double
     charWidth c = fromMaybe defaultLetterWidth (letterWidthTable !? fromEnum c)
 
-layout :: Graph -> Int -> Seq XCoord -> [XCoord] -> ([XCoord], XCoord, Seq XCoord)
-layout graph root xcoords (leftEdge0:leftEdge1:leftEdges)  -- [XCoord] is an infinite list
-  | Seq.index xcoords root == -1 = case Seq.index (graph^.nodes) root of
+layout :: Graph -> Int -> Int -> Seq Depth -> Seq XCoord -> [XCoord] -> ([XCoord], XCoord, Seq XCoord)
+layout graph root currDepth depths xcoords (leftEdge0:leftEdge1:leftEdges)  -- [XCoord] is an infinite list
+  | Seq.index xcoords root == -1 && Seq.index depths root == currDepth =
+    case Seq.index (graph^.nodes) root of
       VarNode v -> let
         nodeWidth = max 4 (stringWidth v)
         in ((leftEdge0+nodeWidth):leftEdge1:leftEdges, leftEdge0+nodeWidth/2, Seq.update root (leftEdge0+nodeWidth/2) xcoords)  -- (right edges, root, xcoords)
       LamNode v e -> let
-        (eRightEdges, eRoot, xcoords') = layout graph e xcoords (max leftEdge0 leftEdge1 : leftEdges)
+        (eRightEdges, eRoot, xcoords') = layout graph e currDepth' depths xcoords (max leftEdge0 leftEdge1 : leftEdges)
         in ((eRoot+2):eRightEdges, eRoot, Seq.update root eRoot xcoords')
       AppNode e1 e2
         | e1 == e2 -> let
-            (eRightEdges, eRoot, xcoords') = layout graph e1 xcoords (max leftEdge0 leftEdge1 : leftEdges)
-            in ((eRoot+2):eRightEdges, eRoot, Seq.update root eRoot xcoords')
+          (eRightEdges, eRoot, xcoords') = layout graph e1 currDepth' depths xcoords (max leftEdge0 leftEdge1 : leftEdges)
+          in ((eRoot+2):eRightEdges, eRoot, Seq.update root eRoot xcoords')
         | otherwise -> let
-            (e1RightEdges, e1Root, xcoords') = layout graph e1 xcoords (max (leftEdge0-2) leftEdge1:leftEdges)
-            (e2RightEdges, e2Root, xcoords'') = layout graph e2 xcoords' e1RightEdges
-            rootXCoord = (e1Root + e2Root) / 2
-            in ((rootXCoord+2):e2RightEdges, rootXCoord, Seq.update root rootXCoord xcoords'')
+          (e1RightEdges, e1Root, xcoords') = layout graph e1 currDepth' depths xcoords (max (leftEdge0-2) leftEdge1:leftEdges)
+          (e2RightEdges, e2Root, xcoords'') = layout graph e2 currDepth' depths xcoords' e1RightEdges
+          rootXCoord = (e1Root + e2Root) / 2
+          in ((rootXCoord+2):e2RightEdges, rootXCoord, Seq.update root rootXCoord xcoords'')
   | otherwise = ((leftEdge0+4):leftEdge1:leftEdges, leftEdge0+2, xcoords)
-layout _ _ _ _ = undefined
+  where
+    currDepth' = currDepth + 1
+layout _ _ _ _ _ _ = undefined
 
 xScale = 10
 yScale = 40
@@ -246,7 +250,7 @@ renderGraph (graph1:graph2:graphs) = let
   (_, graph) = graph2
   root = graph ^. rootIndex
   depths = computeDepths graph root (Seq.replicate (Seq.length (graph^.nodes)) (-1)) 0
-  (rightEdges, _, xcoords) = layout graph root (Seq.replicate (Seq.length (graph^.nodes)) (-1)) (repeat 0)
+  (rightEdges, _, xcoords) = layout graph root 0 depths (Seq.replicate (Seq.length (graph^.nodes)) (-1)) (repeat 0)
   viewBoxWidth = xScale * maximum (take (Seq.length (graph^.nodes)) rightEdges) + 30
   viewBoxHeight = yScale * maximum depths + 30
   in svg_
