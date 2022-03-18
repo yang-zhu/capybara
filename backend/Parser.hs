@@ -11,18 +11,18 @@ module Parser
 where
 
 import Control.Applicative (Alternative (..))
-import Control.Lens(makePrisms)
+import Control.Lens (makePrisms)
 
 import Lexer
 
 
-{-
-Grammar:
-Program ::= Definition {Definition}
-Definition ::= Variable "=" Abstraction ";"
-Abstraction ::= "\" Variable "." Abstraction | Application
-Application ::= Atom {Atom}  -- left associative
-Atom ::= Variable | "(" Abstraction ")"
+{-|
+  Grammar:
+  Program ::= Definition {Definition}
+  Definition ::= Variable "=" Abstraction ";"
+  Abstraction ::= "λ" Variable "." Abstraction | Application
+  Application ::= Atom {Atom}  -- left associative
+  Atom ::= Variable | "(" Abstraction ")"
 -}
 
 data Definition = Def String Expression
@@ -64,9 +64,12 @@ instance Applicative Parser where
   mf <*> mp = mf >>= \f -> mp >>= return . f
 
 instance Alternative Parser where
+  -- | This function should not be used. Left ("unknown", (EndOfInput,0,0)) is a dummy value to fill the gap.
   empty :: Parser a
   empty = Parser $ \_ -> Left ("unknown", (EndOfInput,0,0))
 
+  -- | If p1 already managed to parse some tokens, then p2 will not be tried.
+  -- This is to prevent full backtracking.
   (<|>) :: Parser a -> Parser a -> Parser a
   p1 <|> p2 = Parser $ \ts -> case runParser p1 ts of
     err@(Left (_, tok)) -> if null ts || tok == head ts then runParser p2 ts else err
@@ -84,28 +87,31 @@ parseDefinitions defs = either (Left . DefError) Right (parse (some definition) 
 parseExpression :: String -> Either ParseError Expression
 parseExpression expr = either (Left . ExprError) Right (parse abstraction expr)
 
--- strip off the Parser constructor
+-- | Strips off the Parser constructor.
 runParser :: Parser a -> [TokenWithPos] -> Either (String, TokenWithPos) (a, [TokenWithPos])
 runParser (Parser p) = p
 
--- parse a token
+-- | Parses a token.
 token :: Parser TokenWithPos
 token = Parser $ \case
+  -- the two 0s are dummy positions
+  -- the reason that in this case it does not return a Left value immediately is to allow matchKeyword to generate a better error message
   [] -> Right ((EndOfInput,0,0), [])
   t : ts1 -> Right (t, ts1)
 
--- check if the to-be-processed token matches the expected keyword
+-- | Checks if the to-be-processed token matches the expected keyword.
 matchKeyword :: String -> Parser ()
 matchKeyword tok = token >>= \case
   (Keyword kw, _, _)
     | kw == tok -> return ()
   t -> errorMsg  ("Expected " ++ show tok) t
 
--- abort parsing and deliver an error message
+-- | Aborts parsing and delivers an error message together with the erroneous token.
+-- The erroneous token is used to generate a more concrete error message. See composeErrorMsg in ViewModel.
 errorMsg :: String -> TokenWithPos ->  Parser a
 errorMsg msg tok = Parser $ \_ -> Left (msg, tok)
 
--- parse a definition
+-- | Parses a definition.
 definition :: Parser Definition
 definition = do
   fun <- variable
@@ -114,7 +120,7 @@ definition = do
   matchKeyword ";"
   return (Def fun body)
 
--- parse an abstraction
+-- | Parses an abstraction
 abstraction :: Parser Expression
 abstraction = do
     matchKeyword "λ"
@@ -124,17 +130,16 @@ abstraction = do
     return (Lam v e)
     <|> application
 
--- parse an application
+-- Parses an application
 application :: Parser Expression
 application = some atom >>= return . foldl1 App
 
--- parse an atomic expression
+-- Parses an atomic expression
 atom :: Parser Expression
-atom =
-  matchKeyword "(" *> abstraction <* matchKeyword ")"
-    <|> (variable >>= return . Var)
+atom = matchKeyword "(" *> abstraction <* matchKeyword ")"
+  <|> (variable >>= return . Var)
 
--- parse a variable
+-- Parses a variable
 variable :: Parser String
 variable = token >>= \case
   (Variable v, _, _) -> return v
