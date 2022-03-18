@@ -50,7 +50,7 @@ strWithPos row col (c:cs)
 
 -- | Identifiers allow letters, digits and underscores, but they must begin with a letter.
 isIdentifierChar :: (Char, Row, Col) -> Bool
-isIdentifierChar (c, _, _) = isAlphaNum c || c == '_'
+isIdentifierChar (c, _, _) = (isAlphaNum c && c /= 'λ') || c == '_'
 
 -- | Converts characters into tokens, the position information is preserved.
 charsToTokens :: [(Char, Row, Col)] -> Either (LexError, TokenWithPos) [TokenWithPos]
