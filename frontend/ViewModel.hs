@@ -1,9 +1,10 @@
 module ViewModel(viewModel) where
 
-import Data.Foldable (toList)
+import Data.Maybe (isJust, isNothing, fromMaybe)
 import Data.Sequence (Seq)
 import qualified Data.Sequence as Seq
-import Data.Maybe (isJust, isNothing, fromMaybe)
+import Control.Monad.Trans.Reader
+import Control.Monad.Trans.State
 import Control.Lens ((^.), (^?), (^?!), _1, _2, _Just, _head)
 import Miso
 import Miso.String (MisoString, ms)
@@ -13,11 +14,7 @@ import Lexer
 import Parser
 import GraphReduction
 import Model
-import GHC.Float (int2Double)
-
-
-type Depth = Int
-type XCoord = Double
+import Layout
 
 
 header :: View Action
@@ -113,58 +110,58 @@ form m =
     [Miso.id_ "form"]
     (defMenu : inputArea m : formButtons m)
 
-computeDepths :: Graph -> Int -> Seq Depth -> Depth -> Seq Depth
-computeDepths graph root depths currDepth
-  | currDepth > Seq.index depths root = case Seq.index (graph^.nodes) root of
-      VarNode v -> depths'
-      LamNode v e -> computeDepths graph e depths' currDepth'
-      AppNode e1 e2 -> let
-        depths'' = computeDepths graph e1 depths' currDepth'
-        in computeDepths graph e2 depths'' currDepth'
-  | otherwise = depths
-  where
-    depths' = Seq.update root currDepth depths
-    currDepth' = currDepth + 1
+-- computeDepths :: Graph -> Int -> Seq Depth -> Depth -> Seq Depth
+-- computeDepths graph root depths currDepth
+--   | currDepth > Seq.index depths root = case Seq.index (graph^.nodes) root of
+--       VarNode v -> depths'
+--       LamNode v e -> computeDepths graph e depths' currDepth'
+--       AppNode e1 e2 -> let
+--         depths'' = computeDepths graph e1 depths' currDepth'
+--         in computeDepths graph e2 depths'' currDepth'
+--   | otherwise = depths
+--   where
+--     depths' = Seq.update root currDepth depths
+--     currDepth' = currDepth + 1
 
--- generated using https://bl.ocks.org/tophtucker/62f93a4658387bb61e4510c37e2e97cf
-letterWidthTable = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.2490234375,0.33359375,0.40859375,0.5,0.5,0.83359375,0.778125,0.18046875,0.33359375,0.33359375,0.5,0.5640625,0.25,0.33359375,0.25,0.278125,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.278125,0.278125,0.5640625,0.5640625,0.5640625,0.44453125,0.92109375,0.72265625,0.6671875,0.6671875,0.72265625,0.6109375,0.55625,0.72265625,0.72265625,0.33359375,0.38984375,0.72265625,0.6109375,0.88984375,0.72265625,0.72265625,0.55625,0.72265625,0.6671875,0.55625,0.6109375,0.72265625,0.72265625,0.94453125,0.72265625,0.72265625,0.6109375,0.33359375,0.33984375,0.33359375,0.46953125,0.5,0.343359375,0.44453125,0.5,0.44453125,0.5,0.44453125,0.3828125,0.5,0.5,0.278125,0.3357421875,0.5,0.278125,0.778125,0.5,0.5,0.5,0.5,0.33642578125,0.38984375,0.27880859375,0.5,0.5,0.72265625,0.5,0.5,0.44453125,0.48046875,0.20078125,0.48046875,0.54140625]
-defaultLetterWidth = 0.5122738486842104
+-- -- generated using https://bl.ocks.org/tophtucker/62f93a4658387bb61e4510c37e2e97cf
+-- letterWidthTable = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.2490234375,0.33359375,0.40859375,0.5,0.5,0.83359375,0.778125,0.18046875,0.33359375,0.33359375,0.5,0.5640625,0.25,0.33359375,0.25,0.278125,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.278125,0.278125,0.5640625,0.5640625,0.5640625,0.44453125,0.92109375,0.72265625,0.6671875,0.6671875,0.72265625,0.6109375,0.55625,0.72265625,0.72265625,0.33359375,0.38984375,0.72265625,0.6109375,0.88984375,0.72265625,0.72265625,0.55625,0.72265625,0.6671875,0.55625,0.6109375,0.72265625,0.72265625,0.94453125,0.72265625,0.72265625,0.6109375,0.33359375,0.33984375,0.33359375,0.46953125,0.5,0.343359375,0.44453125,0.5,0.44453125,0.5,0.44453125,0.3828125,0.5,0.5,0.278125,0.3357421875,0.5,0.278125,0.778125,0.5,0.5,0.5,0.5,0.33642578125,0.38984375,0.27880859375,0.5,0.5,0.72265625,0.5,0.5,0.44453125,0.48046875,0.20078125,0.48046875,0.54140625]
+-- defaultLetterWidth = 0.5122738486842104
 
-(!?) :: [a] -> Int -> Maybe a
-[] !? _ = Nothing
-(x:xs) !? i
-  | i == 0 = Just x
-  | otherwise = xs !? (i - 1)
+-- (!?) :: [a] -> Int -> Maybe a
+-- [] !? _ = Nothing
+-- (x:xs) !? i
+--   | i == 0 = Just x
+--   | otherwise = xs !? (i - 1)
 
-stringWidth :: String -> Double
-stringWidth s = 2 * foldl (\acc c -> charWidth c + acc) 0 s
-  where
-    charWidth :: Char -> Double
-    charWidth c = fromMaybe defaultLetterWidth (letterWidthTable !? fromEnum c)
+-- stringWidth :: String -> Double
+-- stringWidth s = 2 * foldl (\acc c -> charWidth c + acc) 0 s
+--   where
+--     charWidth :: Char -> Double
+--     charWidth c = fromMaybe defaultLetterWidth (letterWidthTable !? fromEnum c)
 
-layout :: Graph -> Int -> Int -> Seq Depth -> Seq XCoord -> [XCoord] -> ([XCoord], XCoord, Seq XCoord)
-layout graph root currDepth depths xcoords (leftEdge0:leftEdge1:leftEdges)  -- [XCoord] is an infinite list
-  | Seq.index xcoords root == -1 && Seq.index depths root == currDepth =
-    case Seq.index (graph^.nodes) root of
-      VarNode v -> let
-        nodeWidth = max 4 (stringWidth v)
-        in ((leftEdge0+nodeWidth):leftEdge1:leftEdges, leftEdge0+nodeWidth/2, Seq.update root (leftEdge0+nodeWidth/2) xcoords)  -- (right edges, root, xcoords)
-      LamNode v e -> let
-        (eRightEdges, eRoot, xcoords') = layout graph e currDepth' depths xcoords (max leftEdge0 leftEdge1 : leftEdges)
-        in ((eRoot+2):eRightEdges, eRoot, Seq.update root eRoot xcoords')
-      AppNode e1 e2
-        | e1 == e2 -> let
-          (eRightEdges, eRoot, xcoords') = layout graph e1 currDepth' depths xcoords (max leftEdge0 leftEdge1 : leftEdges)
-          in ((eRoot+2):eRightEdges, eRoot, Seq.update root eRoot xcoords')
-        | otherwise -> let
-          (e1RightEdges, e1Root, xcoords') = layout graph e1 currDepth' depths xcoords (max (leftEdge0-2) leftEdge1:leftEdges)
-          (e2RightEdges, e2Root, xcoords'') = layout graph e2 currDepth' depths xcoords' e1RightEdges
-          rootXCoord = (e1Root + e2Root) / 2
-          in ((rootXCoord+2):e2RightEdges, rootXCoord, Seq.update root rootXCoord xcoords'')
-  | otherwise = ((leftEdge0+4):leftEdge1:leftEdges, leftEdge0+2, xcoords)
-  where
-    currDepth' = currDepth + 1
-layout _ _ _ _ _ _ = undefined
+-- layout :: Graph -> Int -> Int -> Seq Depth -> Seq XCoord -> [XCoord] -> ([XCoord], XCoord, Seq XCoord)
+-- layout graph root currDepth depths xcoords (leftEdge0:leftEdge1:leftEdges)  -- [XCoord] is an infinite list
+--   | Seq.index xcoords root == -1 && Seq.index depths root == currDepth =
+--     case Seq.index (graph^.nodes) root of
+--       VarNode v -> let
+--         nodeWidth = max 4 (stringWidth v)
+--         in ((leftEdge0+nodeWidth):leftEdge1:leftEdges, leftEdge0+nodeWidth/2, Seq.update root (leftEdge0+nodeWidth/2) xcoords)  -- (right edges, root, xcoords)
+--       LamNode v e -> let
+--         (eRightEdges, eRoot, xcoords') = layout graph e currDepth' depths xcoords (max leftEdge0 leftEdge1 : leftEdges)
+--         in ((eRoot+2):eRightEdges, eRoot, Seq.update root eRoot xcoords')
+--       AppNode e1 e2
+--         | e1 == e2 -> let
+--           (eRightEdges, eRoot, xcoords') = layout graph e1 currDepth' depths xcoords (max leftEdge0 leftEdge1 : leftEdges)
+--           in ((eRoot+2):eRightEdges, eRoot, Seq.update root eRoot xcoords')
+--         | otherwise -> let
+--           (e1RightEdges, e1Root, xcoords') = layout graph e1 currDepth' depths xcoords (max (leftEdge0-2) leftEdge1:leftEdges)
+--           (e2RightEdges, e2Root, xcoords'') = layout graph e2 currDepth' depths xcoords' e1RightEdges
+--           rootXCoord = (e1Root + e2Root) / 2
+--           in ((rootXCoord+2):e2RightEdges, rootXCoord, Seq.update root rootXCoord xcoords'')
+--   | otherwise = ((leftEdge0+4):leftEdge1:leftEdges, leftEdge0+2, xcoords)
+--   where
+--     currDepth' = currDepth + 1
+-- layout _ _ _ _ _ _ = undefined
 
 xScale = 10
 yScale = 40
@@ -209,10 +206,10 @@ draw (redex, graph) root depths xcoords = case Seq.index (graph^.nodes) root of
     e1Y = yScale * Seq.index depths e1
     e2X = xScale * Seq.index xcoords e2
     e2Y = yScale * Seq.index depths e2
-    lCtlPtX = rootX - ctlPtXDiff e1Y (e1X > rootX)
-    rCtlPtX = rootX + ctlPtXDiff e2Y (e2X < rootX)
-    lCtlPtY = rootY + ctlPtYDiff e1Y (e1X > rootX)
-    rCtlPtY = rootY + ctlPtYDiff e2Y (e2X < rootX)
+    lCtlPtX = rootX - ctlPtXDiff e1Y (e1X >= rootX)
+    rCtlPtX = rootX + ctlPtXDiff e2Y (e2X <= rootX)
+    lCtlPtY = rootY + ctlPtYDiff e1Y (e1X >= rootX)
+    rCtlPtY = rootY + ctlPtYDiff e2Y (e2X <= rootX)
     in  [ text_
             [ dominantBaseline_ "auto"
             , textAnchor_ "middle"
@@ -271,8 +268,10 @@ renderGraph (graph1:graph2:graphs) = let
   (redex, _) = graph1
   (_, graph) = graph2
   root = graph ^. rootIndex
-  depths = computeDepths graph root (Seq.replicate (Seq.length (graph^.nodes)) (-1)) 0
-  (rightEdges, _, xcoords) = layout graph root 0 depths (Seq.replicate (Seq.length (graph^.nodes)) (-1)) (repeat 0)
+  depths = execState (runReaderT (computeDepths root 0) graph) (Seq.replicate (Seq.length (graph^.nodes)) (-1))
+  ((rightEdges, _), xcoords) = runState (runReaderT (runReaderT (layout root 0 (repeat 0)) graph) depths) (Seq.replicate (Seq.length (graph^.nodes)) (-1))
+  -- depths = computeDepths graph root (Seq.replicate (Seq.length (graph^.nodes)) (-1)) 0
+  -- (rightEdges, _, xcoords) = layout graph root 0 depths (Seq.replicate (Seq.length (graph^.nodes)) (-1)) (repeat 0)
   viewBoxWidth = xScale * maximum (take (Seq.length (graph^.nodes)) rightEdges) + 30
   viewBoxHeight = yScale * maximum depths + 30
   in svg_
