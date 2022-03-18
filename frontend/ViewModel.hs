@@ -168,6 +168,9 @@ layout _ _ _ _ _ _ = undefined
 
 xScale = 10
 yScale = 40
+belowTextXDiff = 5
+belowTextYDiff = 5
+aboveTextYDiff = 15
 
 draw :: (Maybe Int, Graph) -> Int -> Seq Depth -> Seq XCoord -> [View Action]
 draw (redex, graph) root depths xcoords = case Seq.index (graph^.nodes) root of
@@ -193,8 +196,8 @@ draw (redex, graph) root depths xcoords = case Seq.index (graph^.nodes) root of
         , line_
             [ x1_ (ms rootX)
             , x2_ (ms eX)
-            , y1_ (ms (rootY+5))
-            , y2_ (ms (eY-15))
+            , y1_ (ms (rootY+belowTextYDiff))
+            , y2_ (ms (eY-aboveTextYDiff))
             , stroke_ "black"
             , strokeWidth_ "1.5"
             ]
@@ -206,6 +209,10 @@ draw (redex, graph) root depths xcoords = case Seq.index (graph^.nodes) root of
     e1Y = yScale * Seq.index depths e1
     e2X = xScale * Seq.index xcoords e2
     e2Y = yScale * Seq.index depths e2
+    lCtlPtX = rootX - ctlPtXDiff e1Y (e1X > rootX)
+    rCtlPtX = rootX + ctlPtXDiff e2Y (e2X < rootX)
+    lCtlPtY = rootY + ctlPtYDiff e1Y (e1X > rootX)
+    rCtlPtY = rootY + ctlPtYDiff e2Y (e2X < rootX)
     in  [ text_
             [ dominantBaseline_ "auto"
             , textAnchor_ "middle"
@@ -217,9 +224,9 @@ draw (redex, graph) root depths xcoords = case Seq.index (graph^.nodes) root of
             [ text "@" ]
         , path_
             [ d_
-              (  "M " <> ms (rootX-5) <> " " <> ms (rootY+5)
-              <> "Q " <> ms (rootX-10) <> " " <> ms (rootY+10)
-              <> " " <> ms e1X <> " " <> ms (e1Y-15)
+              (  "M " <> ms (rootX-belowTextXDiff) <> " " <> ms (rootY+belowTextYDiff)
+              <> "Q " <> ms lCtlPtX <> " " <> ms lCtlPtY
+              <> " " <> ms e1X <> " " <> ms (e1Y-aboveTextYDiff)
               )
             , fill_ "transparent"
             , stroke_ "black"
@@ -228,9 +235,9 @@ draw (redex, graph) root depths xcoords = case Seq.index (graph^.nodes) root of
             []
         , path_
             [ d_
-              (  "M " <> ms (rootX+5)  <> " " <> ms (rootY+5)
-              <> "Q " <> ms (rootX+10) <> " " <> ms (rootY+10)
-              <> " " <> ms e2X <> " " <> ms (e2Y-15)
+              (  "M " <> ms (rootX+belowTextXDiff)  <> " " <> ms (rootY+belowTextYDiff)
+              <> "Q " <> ms rCtlPtX <> " " <> ms rCtlPtY
+              <> " " <> ms e2X <> " " <> ms (e2Y-aboveTextYDiff)
               )
             , fill_ "transparent"
             , stroke_ "black"
@@ -243,6 +250,21 @@ draw (redex, graph) root depths xcoords = case Seq.index (graph^.nodes) root of
   where
     rootX = xScale * Seq.index xcoords root
     rootY = yScale * Seq.index depths root
+
+    ctlPtXDiff :: Depth -> Bool -> Double
+    ctlPtXDiff endPtY wrongSide
+      | endPtY - rootY > yScale = fromIntegral yScale
+      | endPtY - rootY == yScale && wrongSide = 15
+      | otherwise = belowTextXDiff
+    
+    ctlPtYDiff :: Depth -> Bool -> Int
+    ctlPtYDiff endPtY wrongSide
+      | endPtY - rootY > yScale = yScale
+      | endPtY - rootY == yScale && wrongSide = 15
+      | otherwise = belowTextYDiff
+
+    -- belowTextXDiff :: XCoord -> Depth -> Double
+    -- belowTextXDiff x y = if y - rootY > 1 then 5 else (x - rootX) / fromIntegral (y - rootY) * fromIntegral belowTextYDiff
 
 renderGraph :: [(Maybe Int, Graph)] -> View Action
 renderGraph (graph1:graph2:graphs) = let
