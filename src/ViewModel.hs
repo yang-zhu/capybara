@@ -252,26 +252,40 @@ renderGraph (graph1:graph2:graphs) = let
       (draw (redex, graph) root depths xcoords)
 renderGraph _ = undefined
 
+onArrows :: Action -> Action -> Attribute Action
+onArrows act1 act2 = onKeyDown hitArrow
+  where
+    hitArrow :: KeyCode -> Action
+    hitArrow (KeyCode 37) = act1
+    hitArrow (KeyCode 39) = act2
+    hitArrow _ = NoOp
+
 -- | The buttons that trigger the Next and Prev actions.
 graphButtons :: Model -> View Action
 graphButtons model
   | Just graphs <- model ^. (output . graph) =
     div_
-      [ id_ "graph-buttons" ]
+      [ id_ "graph-buttons"
+      ]
       [ div_
-          [ class_ "btn-group" ]
+          [ class_ "btn-group"
+          ]
           [ button_
-              [ type_ "button"
+              [ id_ "prev-button"
+              , type_ "button"
               , class_ "btn btn-outline-primary material-icons-round"
-              , disabled_ (null $ drop 2 $ model ^?! (output . graph . _Just))
+              , classList_ [("disabled", null $ drop 2 $ model ^?! (output . graph . _Just))]
               , onClick Prev
+              , onArrows Prev Next
               ]
               [ text "navigate_before" ]
           , button_
-              [ type_ "button"
+              [ id_ "next-button"
+              , type_ "button"
               , class_ "btn btn-outline-primary material-icons-round"
-              , disabled_ (isNothing $ model ^?! (output . graph . _Just . _head . _1))
+              , classList_ [("disabled", isNothing $ model ^?! (output . graph . _Just . _head . _1))]
               , onClick Next
+              , onArrows Prev Next
               ]
               [ text "navigate_next" ]
           ]

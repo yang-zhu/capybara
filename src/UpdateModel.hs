@@ -1,5 +1,6 @@
 module UpdateModel(updateModel) where
 
+import Data.Maybe (isNothing)
 import Control.Lens ((&), (^.), (%~), (.~), (^?!), _1, _2, _Just, _head)
 import Miso (Effect, (<#), noEff, focus, blur)
 import Miso.String (MisoString, fromMisoString, toMisoString)
@@ -50,7 +51,7 @@ updateModel Eval model =
       & termInput %~ turnBackslashIntoLambda  -- replace all the backslashes into λs in the input box
       & defInput %~ turnBackslashIntoLambda   -- replace all the backslashes into λs in the definitions
       & eval
-  ) <# (blur "term-input" >> return NoOp)     -- removes the focus from the input box
+  ) <# (focus "next-button" >> return NoOp)     -- removes the focus from the input box
 updateModel (TermInput newInput) model = noEff $ model & termInput .~ newInput
 updateModel (DefInput newInput) model = noEff $ model & defInput .~ newInput
 updateModel CBNeed model = model & strategy .~ CallByNeed & updateModel Eval
@@ -61,6 +62,12 @@ updateModel Clear model =
       & termInput .~ ""
       & output .~ Output Nothing Nothing []
   ) <# (focus "term-input" >> return NoOp)  -- focuses the input box when the clear button is pressed
-updateModel Next model = noEff $ next model
-updateModel Prev model = noEff $ prev model
+updateModel Next model = 
+  if isNothing $ model ^?! (output . graph . _Just . _head . _1)
+    then noEff model
+    else next model <# (focus "next-button" >> return NoOp)
+updateModel Prev model = 
+  if null $ drop 2 $ model ^?! (output . graph . _Just)
+    then noEff model
+    else prev model <# (focus "prev-button" >> return NoOp)
 updateModel NoOp model = noEff model

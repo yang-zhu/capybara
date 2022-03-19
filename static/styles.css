@@ -1,9 +1,14 @@
 @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@500&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Brygada+1918&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Ubuntu+Mono&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans&display=swap');
 
 body {
   margin: 10px;
+  font-family: 'Open Sans', sans-serif;
+}
+
+h4 {
   font-family: "Quicksand", sans-serif;
 }
 
@@ -57,9 +62,15 @@ svg {
   padding: 0.1rem 0.55rem;
 }
 
-.btn:disabled {
-  color: #6c757d;
-  border-color: #6c757d;
+#graph-buttons .btn :focus{
+  outline: none;
+}
+
+.btn.disabled {
+  color: #9d9d9d;
+  border-color: #9d9d9d;
+  /* outline: none; */
+  box-shadow: none;
 }
 
 .alert {
