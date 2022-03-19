@@ -232,9 +232,6 @@ draw (redex, graph) root depths xcoords = case Seq.index (graph^.nodes) root of
       | endPtY - rootY == yScale && wrongSide = 15
       | otherwise = belowTextYDiff
 
-    -- belowTextXDiff :: XCoord -> Depth -> Double
-    -- belowTextXDiff x y = if y - rootY > 1 then 5 else (x - rootX) / fromIntegral (y - rootY) * fromIntegral belowTextYDiff
-
 -- | Given a graph, computes the position of its nodes and renders the graph.
 renderGraph :: [(Maybe NodeIndex, Graph)] -> View Action
 renderGraph (graph1:graph2:graphs) = let

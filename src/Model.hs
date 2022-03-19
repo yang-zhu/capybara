@@ -43,9 +43,15 @@ initialModel :: Model
 initialModel = Model
   { _termInput = ""
   , _defInput
-      = "True = λx.λy.x;\n\
+      = "id = λx.x;\n\
+        \True = λx.λy.x;\n\
         \False = λx.λy.y;\n\
-        \not = λx.x False True;\n"
+        \not = λx.x False True;\n\
+        \omega = (λx.(x x))(λx.(x x));\n\
+        \fix = λf.(λx.(f (x x)))(λx.(f (x x)));\n\
+        \S = λx.λy.λz.(x z)(y z);\n\
+        \K = λx.λy.x;\n\
+        \I = λx.x;\n"
   , _strategy = CallByNeed
   , _output = Output Nothing Nothing []
   }
