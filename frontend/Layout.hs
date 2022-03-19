@@ -21,7 +21,7 @@ type XCoord = Double
 
 
 -- | Computes depths of all the nodes in a graph.
-computeDepths :: Int -> Depth -> ReaderT Graph (State (Seq Depth)) ()
+computeDepths :: NodeIndex -> Depth -> ReaderT Graph (State (Seq Depth)) ()
 computeDepths root currDepth = do
   graph <- ask
   depths <- lift get
@@ -54,11 +54,11 @@ stringWidth s = 2 * foldl (\acc c -> charWidth c + acc) 0 s
     charWidth c = fromMaybe defaultLetterWidth (letterWidthTable !? fromEnum c)
 
 -- | Computes x-coordinates of all the nodes in a graph.
-layout :: Int       -- ^ the root index of the current subgraph
-       -> Depth     -- ^ the current depth
-       -> [XCoord]  -- ^ infinite list of left boundaries for new nodes, the i-th element refers to currDepth+i
+layout :: NodeIndex  -- ^ the root index of the current subgraph
+       -> Depth      -- ^ the current depth
+       -> [XCoord]   -- ^ infinite list of left boundaries for new nodes, the i-th element refers to currDepth+i
        -> ReaderT Graph (ReaderT (Seq Depth) (State (Seq XCoord))) ([XCoord], XCoord)
-                    -- ^ the result is (the right boundary of the processed nodes, the position of the root node of the subgraph)                  
+                     -- ^ the result is (the right boundary of the processed nodes, the position of the root node of the subgraph)                  
 layout root currDepth (leftEdge0:leftEdge1:leftEdges) = do
   graph <- ask
   depths <- lift ask

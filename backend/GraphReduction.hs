@@ -1,5 +1,6 @@
 module GraphReduction
   ( Node(..)
+  , NodeIndex
   , Graph
   , EvalStrategy(..)
   , nodes
@@ -21,14 +22,16 @@ import Parser
 
 data Node
   = VarNode String
-  | LamNode String Int
-  | AppNode Int Int
+  | LamNode String NodeIndex
+  | AppNode NodeIndex NodeIndex
   deriving (Show, Eq)
 
+type NodeIndex = Int
+
 data Graph = Graph
-  { _nodes :: Seq Node  -- ^ all the nodes of a graph arranged in a finger tree
-  , _counter :: Int     -- ^ keeps track of how many numbers have been used to rename bound variables
-  , _rootIndex :: Int   -- ^ the index of the cell where the root node is located
+  { _nodes :: Seq Node        -- ^ all the nodes of a graph arranged in a finger tree
+  , _counter :: Int           -- ^ keeps track of how many numbers have been used to rename bound variables
+  , _rootIndex :: NodeIndex   -- ^ the index of the cell where the root node is located
   }
   deriving Eq
 
@@ -75,33 +78,33 @@ alphaRename (Lam v e) = do
 alphaRename (App e1 e2) = App <$> alphaRename e1 <*> alphaRename e2
 
 -- | Appends node to the end of the graph and returns the index of the new node.
-addNode :: Node -> State Graph Int
+addNode :: Node -> State Graph NodeIndex
 addNode node = do
   modify $ nodes %~ (|> node)
   graph <- get
   return (Seq.length (graph^.nodes) - 1)
 
 -- | Returns the node at the given index.
-getNode :: Int -> State Graph Node
+getNode :: NodeIndex -> State Graph Node
 getNode index = do
   graph <- get
   return (Seq.index (graph^.nodes) index)
 
 -- | Updates the old node with the new node in the graph.
-updateNode :: Int -> Int -> State Graph ()
+updateNode :: NodeIndex -> NodeIndex -> State Graph ()
 updateNode old new = do
   graph <- get
   modify $ nodes %~ Seq.update old (Seq.index (graph^.nodes) new)
 
 -- | Copies the subgraph whose root is located at index and appends it to the end of the graph.
 -- copy and copyNode are mutually recursive.
-copy :: Int -> State Graph Int
+copy :: NodeIndex -> State Graph NodeIndex
 copy index = do
   node <- getNode index
   copyNode node
 
 -- | Copies a subgraph and appends it to the end of the graph.
-copyNode :: Node -> State Graph Int
+copyNode :: Node -> State Graph NodeIndex
 copyNode node@(VarNode v) = addNode node
 copyNode (LamNode v e) = do
   e' <- copy e
@@ -112,7 +115,7 @@ copyNode (AppNode e1 e2) = do
   addNode (AppNode e1' e2')
 
 -- | Converts the parse tree into a graph.
-astToGraph :: Expression -> State Graph Int
+astToGraph :: Expression -> State Graph NodeIndex
 astToGraph (Var v) = addNode (VarNode v)
 astToGraph (Lam v e) = do
   index <- astToGraph e
@@ -124,7 +127,7 @@ astToGraph (App e1 e2) = do
 
 -- | Checks if the subgraph contains any free occurrences of param.
 ifParamInBody :: String             -- ^ the parameter of an abstraction
-              -> Int                -- ^ the index of a subgraph
+              -> NodeIndex          -- ^ the index of a subgraph
               -> Reader Graph Bool  -- ^ returns true if the subgraph contains free occurrences of the parameter
 ifParamInBody param body = do
   graph <- ask
@@ -139,10 +142,10 @@ ifParamInBody param body = do
       return $ res1 || res2
 
 -- | Instantiates the lambda abstraction (performs substitution in the body for reduction).
-instantiate :: String                                  -- ^ the parameter of the abstraction
-            -> Int                                     -- ^ the index of the body of the abstraction
-            -> Int                                     -- ^ the index of the argument
-            -> ReaderT EvalStrategy (State Graph) Int  -- ^ returns the index of the instantiated body
+instantiate :: String                                        -- ^ the parameter of the abstraction
+            -> NodeIndex                                     -- ^ the index of the body of the abstraction
+            -> NodeIndex                                     -- ^ the index of the argument
+            -> ReaderT EvalStrategy (State Graph) NodeIndex  -- ^ returns the index of the instantiated body
 instantiate param body arg = do
   strat <- ask
   graph <- lift get
@@ -165,7 +168,7 @@ instantiate param body arg = do
 
 -- | Searches for redex in a graph and does one step of reduction.
 -- If the reduction is successfully performed, the redex that has been reduced is returned. Otherwise Nothing is returned.
-oneStepReduce :: Int -> [Definition] -> ReaderT EvalStrategy (State Graph) (Maybe Int)
+oneStepReduce :: NodeIndex -> [Definition] -> ReaderT EvalStrategy (State Graph) (Maybe NodeIndex)
 oneStepReduce root defs = do
   strat <- ask
   rootNode <- lift (getNode root)
@@ -211,7 +214,7 @@ oneStepReduce root defs = do
     isDef = (isJust .) . lookUpInDefs
 
 -- | Turns an expression into a graph, does one step of reduction and returns the first two graphs.
-firstStep :: EvalStrategy -> Expression -> [Definition] -> [(Maybe Int, Graph)]
+firstStep :: EvalStrategy -> Expression -> [Definition] -> [(Maybe NodeIndex, Graph)]
 firstStep strat expr defs = let
   (renamedExpr, counter) = runState (runReaderT (alphaRename expr) []) 1
   (root, graph) = runState (astToGraph renamedExpr) Graph{_nodes=Seq.empty, _counter=counter, _rootIndex=negate 1}
@@ -220,5 +223,5 @@ firstStep strat expr defs = let
   in [(redex, graph''), (Nothing, graph')]
 
 -- | Performs one step of reduction and returns the possibly reduced graph.
-nextGraph :: EvalStrategy -> Graph -> [Definition] -> (Maybe Int, Graph)
+nextGraph :: EvalStrategy -> Graph -> [Definition] -> (Maybe NodeIndex, Graph)
 nextGraph strat graph defs = runState (runReaderT (oneStepReduce (graph^.rootIndex) defs) strat) graph

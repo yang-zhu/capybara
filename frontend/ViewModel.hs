@@ -135,7 +135,7 @@ belowTextXDiff = 5
 belowTextYDiff = 5
 aboveTextYDiff = 15
 
-draw :: (Maybe Int, Graph) -> Int -> Seq Depth -> Seq XCoord -> [View Action]
+draw :: (Maybe NodeIndex, Graph) -> NodeIndex -> Seq Depth -> Seq XCoord -> [View Action]
 draw (redex, graph) root depths xcoords = case Seq.index (graph^.nodes) root of
   VarNode v ->
     [ text_
@@ -232,7 +232,7 @@ draw (redex, graph) root depths xcoords = case Seq.index (graph^.nodes) root of
     -- belowTextXDiff x y = if y - rootY > 1 then 5 else (x - rootX) / fromIntegral (y - rootY) * fromIntegral belowTextYDiff
 
 -- | Given a graph, computes the position of its nodes and renders the graph.
-renderGraph :: [(Maybe Int, Graph)] -> View Action
+renderGraph :: [(Maybe NodeIndex, Graph)] -> View Action
 renderGraph (graph1:graph2:graphs) = let
   (redex, _) = graph1
   (_, graph) = graph2
