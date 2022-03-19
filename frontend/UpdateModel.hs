@@ -45,13 +45,22 @@ prev :: Model -> Model
 prev = (output . graph . _Just) %~ drop 1
 
 updateModel :: Action -> Model -> Effect Action Model
-updateModel Eval model = eval model <# (blur "term-input" >> return NoOp)
-updateModel (TermInput newInput) model = noEff $ model & termInput .~ turnBackslashIntoLambda newInput
-updateModel (DefInput newInput) model = noEff $ model & defInput .~ turnBackslashIntoLambda newInput
-updateModel CBNeed model = noEff $ eval $ model & strategy .~ CallByNeed
-updateModel CBName model = noEff $ eval $ model & strategy .~ CallByName
-updateModel CBValue model = noEff $ eval $ model & strategy .~ CallByValue
-updateModel Clear model = (model & termInput .~ "" & output .~ Output Nothing Nothing []) <# (focus "term-input" >> return NoOp)
+updateModel Eval model =
+  ( model 
+      & termInput %~ turnBackslashIntoLambda  -- replace all the backslashes into λs in the input box
+      & defInput %~ turnBackslashIntoLambda   -- replace all the backslashes into λs in the definitions
+      & eval
+  ) <# (blur "term-input" >> return NoOp)     -- removes the focus from the input box
+updateModel (TermInput newInput) model = noEff $ model & termInput .~ newInput
+updateModel (DefInput newInput) model = noEff $ model & defInput .~ newInput
+updateModel CBNeed model = model & strategy .~ CallByNeed & updateModel Eval
+updateModel CBName model = model & strategy .~ CallByName & updateModel Eval
+updateModel CBValue model = model & strategy .~ CallByValue & updateModel Eval
+updateModel Clear model =
+  ( model 
+      & termInput .~ ""
+      & output .~ Output Nothing Nothing []
+  ) <# (focus "term-input" >> return NoOp)  -- focuses the input box when the clear button is pressed
 updateModel Next model = noEff $ next model
 updateModel Prev model = noEff $ prev model
 updateModel NoOp model = noEff model
