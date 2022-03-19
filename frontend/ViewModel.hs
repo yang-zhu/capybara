@@ -116,7 +116,7 @@ termArea model =
       , if isJust $ model ^? output . inputError . _Just . _ExprError
           then class_ "form-control is-invalid"
           else class_ "form-control"
-      , placeholder_ "(\\x. x) y"
+      , placeholder_ "(\\x.x) y"
       , value_ (model^.termInput)
       , onInput TermInput
       , onEnter Eval
@@ -164,6 +164,7 @@ draw (redex, graph) root depths xcoords = case Seq.index (graph^.nodes) root of
             , y2_ (ms (eY-aboveTextYDiff))
             , stroke_ "black"
             , strokeWidth_ "1.5"
+            , strokeLinecap_ "round"
             ]
             []
         ]
@@ -195,6 +196,7 @@ draw (redex, graph) root depths xcoords = case Seq.index (graph^.nodes) root of
             , fill_ "transparent"
             , stroke_ "black"
             , strokeWidth_ "1.5"
+            , strokeLinecap_ "round"
             ]
             []
         , path_
@@ -206,6 +208,7 @@ draw (redex, graph) root depths xcoords = case Seq.index (graph^.nodes) root of
             , fill_ "transparent"
             , stroke_ "black"
             , strokeWidth_ "1.5"
+            , strokeLinecap_ "round"
             ]
             []
         ]
