@@ -2,7 +2,7 @@ module UpdateModel(updateModel) where
 
 import Data.Maybe (isNothing)
 import Control.Lens ((&), (^.), (%~), (.~), (^?!), _1, _2, _Just, _head)
-import Miso (Effect, (<#), noEff, focus, blur)
+import Miso (Effect, (<#), noEff, focus)
 import Miso.String (MisoString, fromMisoString, toMisoString)
 
 import Lexer
