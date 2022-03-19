@@ -9,7 +9,7 @@ executable app
   main-is:
     Main.hs
   hs-source-dirs:
-    frontend, backend
+    src
   build-depends:
     base, miso, containers, transformers, text, lens
   if !impl(ghcjs)

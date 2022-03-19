@@ -34,16 +34,16 @@ defMenu :: View Action
 defMenu =
   div_
     []
-    [button_
-      [ type_ "button"
-      , class_ "btn btn-outline-success material-icons"
-      , textProp "data-bs-toggle" "collapse"
-      , textProp "data-bs-target" "#definitions"
-      , textProp "aria-expanded" "false"
-      , textProp "aria-controls" "definitions"
-      , textProp "style" "padding: 3px; font-size: 25px;"
-      ]
-      [ text "reorder" ]
+    [ button_
+        [ type_ "button"
+        , class_ "btn btn-outline-success material-icons-round"
+        , textProp "data-bs-toggle" "collapse"
+        , textProp "data-bs-target" "#definitions"
+        , textProp "aria-expanded" "false"
+        , textProp "aria-controls" "definitions"
+        , textProp "style" "padding: 3px; font-size: 25px;"
+        ]
+        [ text "reorder" ]
     ]
 
 -- | One button triggers the evaluation and the other one clears the input.
@@ -262,18 +262,18 @@ graphButtons model
           [ class_ "btn-group" ]
           [ button_
               [ type_ "button"
-              , class_ "btn btn-outline-primary"
+              , class_ "btn btn-outline-primary material-icons-round"
               , disabled_ (null $ drop 2 $ model ^?! (output . graph . _Just))
               , onClick Prev
               ]
-              [ text "◀" ]
+              [ text "navigate_before" ]
           , button_
               [ type_ "button"
-              , class_ "btn btn-outline-primary"
+              , class_ "btn btn-outline-primary material-icons-round"
               , disabled_ (isNothing $ model ^?! (output . graph . _Just . _head . _1))
               , onClick Next
               ]
-              [ text "▶" ]
+              [ text "navigate_next" ]
           ]
       ]
   | otherwise = text ""

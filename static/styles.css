@@ -4,9 +4,6 @@
 
 body {
   margin: 10px;
-}
-
-h4 {
   font-family: "Quicksand", sans-serif;
 }
 
@@ -57,7 +54,7 @@ svg {
 }
 
 #graph-buttons .btn {
-  padding: 0.1rem 0.75rem;
+  padding: 0.1rem 0.55rem;
 }
 
 .btn:disabled {
