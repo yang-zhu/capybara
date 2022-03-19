@@ -1,7 +1,7 @@
 module UpdateModel(updateModel) where
 
 import Control.Lens ((&), (^.), (%~), (.~), (^?!), _1, _2, _Just, _head)
-import Miso (noEff, Effect)
+import Miso ((<#), Arrows(Arrows), Effect, noEff, focus, blur, KeyCode (KeyCode))
 import Miso.String (MisoString, fromMisoString, toMisoString)
 
 import Lexer
@@ -45,13 +45,13 @@ prev :: Model -> Model
 prev = (output . graph . _Just) %~ drop 1
 
 updateModel :: Action -> Model -> Effect Action Model
-updateModel Eval model = noEff $ eval model
+updateModel Eval model = eval model <# (blur "term-input" >> return NoOp)
 updateModel (TermInput newInput) model = noEff $ model & termInput .~ turnBackslashIntoLambda newInput
 updateModel (DefInput newInput) model = noEff $ model & defInput .~ turnBackslashIntoLambda newInput
 updateModel CBNeed model = noEff $ eval $ model & strategy .~ CallByNeed
 updateModel CBName model = noEff $ eval $ model & strategy .~ CallByName
 updateModel CBValue model = noEff $ eval $ model & strategy .~ CallByValue
-updateModel Clear model = noEff $ model & termInput .~ "" & output .~ Output Nothing Nothing []
+updateModel Clear model = (model & termInput .~ "" & output .~ Output Nothing Nothing []) <# (focus "term-input" >> return NoOp)
 updateModel Next model = noEff $ next model
 updateModel Prev model = noEff $ prev model
 updateModel NoOp model = noEff model

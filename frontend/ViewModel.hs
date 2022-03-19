@@ -8,7 +8,7 @@ import Control.Monad.Trans.State (execState, runState)
 import Control.Lens ((^.), (^?), (^?!), _1, _2, _Just, _head)
 import Miso
 import Miso.String (MisoString, ms)
-import Miso.Svg
+import Miso.Svg hiding (id_, a_)
 
 import Lexer
 import Parser
@@ -66,19 +66,19 @@ formButtons model =
         [class_ "dropdown-menu"]
         [ li_
             []
-            [ Miso.a_
+            [ a_
                 [class_"dropdown-item", href_ "#", onClick CBNeed]
                 [text $ stratToStr CallByNeed]
             ]
         , li_
             []
-            [ Miso.a_
+            [ a_
                 [class_"dropdown-item", href_ "#", onClick CBName]
                 [text (stratToStr CallByName)]
             ]
         , li_
             []
-            [ Miso.a_
+            [ a_
                 [class_"dropdown-item", href_ "#", onClick CBValue]
                 [text (stratToStr CallByValue)]
             ]
@@ -109,9 +109,10 @@ onEnter act = onKeyDown hitEnter
 termArea :: Model -> View Action
 termArea model =
   div_
-    [ Miso.id_ "term-area" ]
+    [ id_ "term-area" ]
     [ input_
       [ type_ "text"
+      , id_ "term-input"
       , if isJust $ model ^? output . inputError . _Just . _ExprError
           then class_ "form-control is-invalid"
           else class_ "form-control"
@@ -126,7 +127,7 @@ termArea model =
 form :: Model -> View Action
 form m =
   div_
-    [Miso.id_ "form"]
+    [id_ "form"]
     (defMenu : termArea m : formButtons m)
 
 xScale = 10
@@ -253,7 +254,7 @@ graphButtons :: Model -> View Action
 graphButtons model
   | Just graphs <- model ^. (output . graph) =
     div_
-      [ Miso.id_ "graph-buttons" ]
+      [ id_ "graph-buttons" ]
       [ div_
           [ class_ "btn-group" ]
           [ button_
@@ -279,7 +280,7 @@ defArea :: Model -> View Action
 defArea model =
   div_
     [ class_ "collapse collapse-horizontal"
-    , Miso.id_ "definitions"
+    , id_ "definitions"
     ]
     [ div_
         [ class_ "card"
@@ -317,20 +318,20 @@ graphView :: Model -> View Action
 graphView model
   | Just graphs <- model ^. (output . graph) =
     div_
-      [ Miso.id_ "graph-area" ]
+      [ id_ "graph-area" ]
       [ graphButtons model
       , renderGraph graphs
       ]
   | Just (ExprError err) <- model ^. (output . inputError) =
     div_
-      [ Miso.id_ "graph-area" ]
+      [ id_ "graph-area" ]
       [ div_
         [class_ "alert alert-danger"]
         [text (ms (composeErrorMsg err False))]
       ]
   | Just (DefError err) <- model ^. (output . inputError) =
     div_
-      [ Miso.id_ "graph-area" ]
+      [ id_ "graph-area" ]
       [ div_
         [class_ "alert alert-danger"]
         [text (ms (composeErrorMsg err True))]]
@@ -339,7 +340,7 @@ graphView model
 defAndGraph :: Model -> View Action
 defAndGraph model =
   div_
-    [ Miso.id_ "def-graph-container" ]
+    [ id_ "def-graph-container" ]
     [ div_ [] []  -- empty div to make collapse work
     , defArea model
     , graphView model

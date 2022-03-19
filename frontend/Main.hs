@@ -27,12 +27,12 @@ runApp app = app
 -- Adapted from the sample project of miso https://github.com/dmjio/miso/blob/master/sample-app/Main.hs
 main :: IO ()
 main = runApp $ startApp Miso.App {
-    initialAction = NoOp,          
-    model  = initialModel,         
-    update = updateModel,          
-    view   = viewModel,            
-    events = defaultEvents,        
-    subs   = [],                   
-    mountPoint = Nothing,          
-    logLevel = Off                 
+    initialAction = NoOp,
+    model  = initialModel,
+    update = updateModel,
+    view   = viewModel,
+    events = defaultEvents,
+    subs   = [],
+    mountPoint = Nothing,
+    logLevel = Off
   }
