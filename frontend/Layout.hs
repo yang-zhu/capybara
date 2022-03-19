@@ -13,6 +13,7 @@ import Control.Monad.Trans.Reader
 import Control.Monad.Trans.State
 import Control.Monad.Trans.Class (lift)
 import Control.Lens ((^.))
+
 import GraphReduction
 
 

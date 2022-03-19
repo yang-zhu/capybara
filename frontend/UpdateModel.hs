@@ -1,7 +1,7 @@
 module UpdateModel(updateModel) where
 
 import Control.Lens ((&), (^.), (%~), (.~), (^?!), _1, _2, _Just, _head)
-import Miso ((<#), Arrows(Arrows), Effect, noEff, focus, blur, KeyCode (KeyCode))
+import Miso (Effect, (<#), noEff, focus, blur)
 import Miso.String (MisoString, fromMisoString, toMisoString)
 
 import Lexer
