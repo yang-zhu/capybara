@@ -32,19 +32,16 @@ header =
 -- | The button that reveals the text area for definitions.
 defMenu :: View Action
 defMenu =
-  div_
-    []
-    [ button_
-        [ type_ "button"
-        , class_ "btn btn-outline-success material-icons-round"
-        , textProp "data-bs-toggle" "collapse"
-        , textProp "data-bs-target" "#definitions"
-        , textProp "aria-expanded" "false"
-        , textProp "aria-controls" "definitions"
-        , textProp "style" "padding: 3px; font-size: 25px;"
-        ]
-        [ text "reorder" ]
+  button_
+    [ type_ "button"
+    , class_ "btn btn-outline-success material-icons-round"
+    , id_ "def-menu-button"
+    , textProp "data-bs-toggle" "collapse"
+    , textProp "data-bs-target" "#definitions"
+    , textProp "aria-expanded" "false"
+    , textProp "aria-controls" "definitions"
     ]
+    [ i_ [class_ "bi bi-text-left"] [] ]
 
 -- | One button triggers the evaluation and the other one clears the input.
 formButtons :: Model -> [View Action]
@@ -108,20 +105,17 @@ onEnter act = onKeyDown hitEnter
 -- | The area for the input term.
 termArea :: Model -> View Action
 termArea model =
-  div_
-    [ id_ "term-area" ]
-    [ input_
-      [ type_ "text"
-      , id_ "term-input"
-      , if isJust $ model ^? output . inputError . _Just . _ExprError
-          then class_ "form-control is-invalid"
-          else class_ "form-control"
-      , placeholder_ "(\\x.x) y"
-      , value_ (model^.termInput)
-      , onInput TermInput
-      , onEnter Eval
-      , autofocus_ True
-      ]
+  input_
+    [ type_ "text"
+    , id_ "term-input"
+    , if isJust $ model ^? output . inputError . _Just . _ExprError
+        then class_ "form-control is-invalid"
+        else class_ "form-control"
+    , placeholder_ "(\\x.x) y"
+    , value_ (model^.termInput)
+    , onInput TermInput
+    , onEnter Eval
+    , autofocus_ True
     ]
 
 form :: Model -> View Action
@@ -264,30 +258,27 @@ graphButtons :: Model -> View Action
 graphButtons model
   | Just graphs <- model ^. (output . graph) =
     div_
-      [ id_ "graph-buttons"
+      [ class_ "btn-group"
+      , id_ "graph-buttons"
       ]
-      [ div_
-          [ class_ "btn-group"
+      [ button_
+          [ id_ "prev-button"
+          , type_ "button"
+          , class_ "btn btn-outline-primary material-icons-round"
+          , classList_ [("disabled", null $ drop 2 $ model ^?! (output . graph . _Just))]
+          , onClick Prev
+          , onArrows Prev Next
           ]
-          [ button_
-              [ id_ "prev-button"
-              , type_ "button"
-              , class_ "btn btn-outline-primary material-icons-round"
-              , classList_ [("disabled", null $ drop 2 $ model ^?! (output . graph . _Just))]
-              , onClick Prev
-              , onArrows Prev Next
-              ]
-              [ text "navigate_before" ]
-          , button_
-              [ id_ "next-button"
-              , type_ "button"
-              , class_ "btn btn-outline-primary material-icons-round"
-              , classList_ [("disabled", isNothing $ model ^?! (output . graph . _Just . _head . _1))]
-              , onClick Next
-              , onArrows Prev Next
-              ]
-              [ text "navigate_next" ]
+          [ i_ [class_ "bi bi-caret-left-fill"] [] ]
+      , button_
+          [ id_ "next-button"
+          , type_ "button"
+          , class_ "btn btn-outline-primary material-icons-round"
+          , classList_ [("disabled", isNothing $ model ^?! (output . graph . _Just . _head . _1))]
+          , onClick Next
+          , onArrows Prev Next
           ]
+          [ i_ [class_ "bi bi-caret-right-fill"] [] ]
       ]
   | otherwise = text ""
 
@@ -362,6 +353,15 @@ defAndGraph model =
     , graphView model
     ]
 
+-- | The Icon that links to the GitHub repository.
+githubLink :: View Action
+githubLink =
+  a_ 
+    [ id_ "github-link"
+    , href_ "https://github.com/yang-zhu/capybara"
+    ]
+    [ i_ [class_ "bi bi-github"] [] ]
+
 viewModel :: Model -> View Action
 viewModel model =
   div_
@@ -369,4 +369,5 @@ viewModel model =
     [ header
     , form model
     , defAndGraph model
+    , githubLink
     ]

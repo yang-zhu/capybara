@@ -2,6 +2,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Brygada+1918&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Ubuntu+Mono&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Open+Sans&display=swap');
+@import url("https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css");
 
 body {
   margin: 10px;
@@ -32,6 +33,11 @@ button:focus:not(:focus-visible):not(:active) {
   box-shadow: none;
 }
 
+#def-menu-button {
+  padding: 0 3px;
+  font-size: 22px;
+}
+
 svg text {
   font-family: "Brygada 1918", serif;
 }
@@ -48,7 +54,7 @@ svg {
   gap: 5px;
 }
 
-#term-area {
+#term-input {
   flex-grow: 1;
 }
 
@@ -59,10 +65,10 @@ svg {
 }
 
 #graph-buttons .btn {
-  padding: 0.1rem 0.55rem;
+  padding: 0.1rem 0.75rem;
 }
 
-#graph-buttons .btn :focus{
+#graph-buttons .btn:focus{
   outline: none;
 }
 
@@ -93,4 +99,19 @@ svg {
 
 #definitions:first-child {
   transition: border-color .15s ease-in-out,box-shadow .15s ease-in-out;
+}
+
+#github-link {
+  position: fixed;
+  bottom: 4px;
+  right: 10px;
+  font-size: 25px;
+}
+
+#github-link:link, #github-link:visited {
+  color: black;
+}
+
+#github-link:hover {
+  color: dimgray;
 }
