@@ -2,7 +2,7 @@
 <h3 align="center"> interactive graph reduction for lambda calculus </h3>
 <br>
 
-Capybara is a single-page web application that allows interactive graph reduction of lambda expressions. It is designed to make the understanding and comparison of different evaluation strategies (Call-By-Name, Call-By-Value and Call-By-Need) easier.
+[Capybara](https://yang-zhu.github.io/capybara) is a single-page web application that allows interactive graph reduction of lambda expressions. It is designed to make the understanding and comparison of different evaluation strategies (Call-By-Name, Call-By-Value and Call-By-Need) easier.
 
 The implementation is completely written in [Haskell](https://www.haskell.org/). The frontend is programmed using [miso](https://haskell-miso.org/). [Bootstrap](https://getbootstrap.com/) is used to style the interface. The graphs are displayed using the Scalable Vector Graphics (SVG) format.
 

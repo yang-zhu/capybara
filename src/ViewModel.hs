@@ -249,12 +249,14 @@ renderGraph (graph1:graph2:graphs) = let
       (draw (redex, graph) root depths xcoords)
 renderGraph _ = undefined
 
+-- | Triggers the Prev action when the left arrow key is pressed.
+-- Triggers the Next action when the right arrow key is pressed.
 onArrows :: Action -> Action -> Attribute Action
 onArrows act1 act2 = onKeyDown hitArrow
   where
     hitArrow :: KeyCode -> Action
-    hitArrow (KeyCode 37) = act1
-    hitArrow (KeyCode 39) = act2
+    hitArrow (KeyCode 37) = act1  -- left arrow
+    hitArrow (KeyCode 39) = act2  -- right arrow
     hitArrow _ = NoOp
 
 -- | The buttons that trigger the Next and Prev actions.

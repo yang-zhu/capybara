@@ -51,7 +51,7 @@ updateModel Eval model =
       & termInput %~ turnBackslashIntoLambda  -- replace all the backslashes into λs in the input box
       & defInput %~ turnBackslashIntoLambda   -- replace all the backslashes into λs in the definitions
       & eval
-  ) <# (focus "next-button" >> return NoOp)     -- removes the focus from the input box
+  ) <# (focus "next-button" >> return NoOp)   -- removes the focus from the input box
 updateModel (TermInput newInput) model = noEff $ model & termInput .~ newInput
 updateModel (DefInput newInput) model = noEff $ model & defInput .~ newInput
 updateModel CBNeed model = model & strategy .~ CallByNeed & updateModel Eval
@@ -65,9 +65,9 @@ updateModel Clear model =
 updateModel Next model = 
   if isNothing $ model ^?! (output . graph . _Just . _head . _1)
     then noEff model
-    else next model <# (focus "next-button" >> return NoOp)
+    else next model <# (focus "next-button" >> return NoOp)  -- focuses the forward button when the last graph is reached
 updateModel Prev model = 
   if null $ drop 2 $ model ^?! (output . graph . _Just)
     then noEff model
-    else prev model <# (focus "prev-button" >> return NoOp)
+    else prev model <# (focus "prev-button" >> return NoOp)  -- focuses the backward button when there are only two graphs left
 updateModel NoOp model = noEff model
