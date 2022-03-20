@@ -290,7 +290,7 @@ defArea model =
     ]
     [ div_
         [ class_ "card"
-        , textProp "style" "width:300px"
+        , textProp "style" "width:450px"
         ]
         [ div_
             [ class_ "card-header" ]
@@ -303,7 +303,7 @@ defArea model =
                 [ class_ "form-control"
                 , classList_ [("is-invalid", isJust $ model ^? output . inputError . _Just . _DefError)]
                 , type_ "text"
-                    , rows_ "15"
+                    , rows_ "17"
                     , onInput DefInput
                     , value_ (model^.defInput)
                 ]
