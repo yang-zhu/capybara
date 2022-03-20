@@ -4,7 +4,7 @@
 
 [Capybara](https://yang-zhu.github.io/capybara) is a single-page web application that allows interactive graph reduction of lambda expressions. It is designed to make the understanding and comparison of different evaluation strategies (Call-By-Name, Call-By-Value and Call-By-Need) easier.
 
-The implementation is completely written in [Haskell](https://www.haskell.org/). The frontend is programmed using [miso](https://haskell-miso.org/). [Bootstrap](https://getbootstrap.com/) is used to style the interface. The graphs are displayed using the Scalable Vector Graphics (SVG) format.
+The implementation is completely written in [Haskell](https://www.haskell.org/). The frontend is programmed using [miso](https://haskell-miso.org/). [Bootstrap](https://getbootstrap.com/) is used to style the interface. The graphs are displayed using SVG.
 
 This is a project for the lecture [Fortgeschrittene Funktionale Programmierung](https://www.tcs.ifi.lmu.de/lehre/ws-2021-22/fun) at LMU in WS21/22.
 
@@ -14,9 +14,11 @@ The interface is rather self-explanatory (hopefully XD), but I will still list t
 
 The user can type a lambda expression in the input box and choose an evaluation strategy. For the lambda symbol, you can simply type a backslash, it will be automatically turned into λ when evaluating.
 
-Variable names can be letters except for λ, digits and underscores. But they must start with a letter.
+Variable names can be letters, digits, underscores and prime symbols. But they should start with a letter.
 
 Supercombinators without parameters are also supported. Some supercombinators are already provided. You can add your own ones of course.
+
+Line comments start with `--`.
 
 When there are errors in your term or supercombinator definitions, the corresponding box will light up and an error message is displayed.
 
@@ -30,7 +32,7 @@ No problem if you have a Linux System! (Unfortunately there is currently a [bug]
 
 You first need to install [`Nix`](https://nixos.org/) on your machine.
 ```
-$ sh <(curl -L https://nixos.org/nix/install) --no-daemon
+sh <(curl -L https://nixos.org/nix/install) --no-daemon
 ```
 Next step is to install [`Cachix`](https://www.cachix.org/) to make the build process faster.
 ```
