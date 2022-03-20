@@ -1,15 +1,15 @@
 code size summary per package:
 
 aeson-1.4.2.0-6oFZmLVQz2fGtrfaZYcFm5:51798
-base:                    418958
+base:                    420108
 containers-0.6.0.1-BAqcfV1UBBeCIRjPbUYeSG:130990
-ghc-prim:                41796
+ghc-prim:                42269
 ghcjs-base-0.2.0.0-JozYZ7GHc7JEfhDrWZm3NT:45236
 ghcjs-prim-0.1.1.0-EXzjGVHQlAS2XAXcu0iCbS:6539
 integer-gmp:             6323
 integer-logarithms-1.0.3-8EbIvyaPt1VK2rKaCK88I2:54062
-main:                    422036
-miso-1.7.1.0-DvigI3Zfya9H7rHjvosxkG:111385
+main:                    428943
+miso-1.7.1.0-DvigI3Zfya9H7rHjvosxkG:112432
 primitive-0.6.4.0-Ix68lo67v0n3y1QMYDPFlz:444
 profunctors-5.3-LmKhECUNDyu34ayPiKauGR:25833
 scientific-0.3.6.2-GYzjCtWA1vQ45VE9CYiZoV:1480
@@ -61,7 +61,7 @@ base
     GHC.IO.Handle.FD:                   27161
     GHC.IO.Handle.Internals:            3651
     GHC.IO.Handle.Types:                1012
-    GHC.Int:                            7698
+    GHC.Int:                            8848
     GHC.List:                           174
     GHC.MVar:                           244
     GHC.Maybe:                          599
@@ -85,7 +85,7 @@ ghc-prim
     GHC.Classes:                        139
     GHC.IntWord64:                      2617
     GHC.Tuple:                          3353
-    GHC.Types:                          31099
+    GHC.Types:                          31572
 
 ghcjs-base-0.2.0.0-JozYZ7GHc7JEfhDrWZm3NT
     Data.JSString:                      1526
@@ -111,12 +111,12 @@ integer-logarithms-1.0.3-8EbIvyaPt1VK2rKaCK88I2
 
 main
     GraphReduction:                     17566
-    Layout:                             14102
+    Layout:                             16069
     Lexer:                              1543
-    Main:                               21044
-    Model:                              55976
-    Parser:                             13417
-    UpdateModel:                        248386
+    Main:                               21503
+    Model:                              59721
+    Parser:                             13447
+    UpdateModel:                        249092
     ViewModel:                          50002
 
 miso-1.7.1.0-DvigI3Zfya9H7rHjvosxkG
@@ -129,7 +129,7 @@ miso-1.7.1.0-DvigI3Zfya9H7rHjvosxkG
     Miso.FFI:                           3317
     Miso.Html.Element:                  841
     Miso.Html.Event:                    30478
-    Miso.Html.Internal:                 17821
+    Miso.Html.Internal:                 18868
     Miso.Html.Property:                 1321
     Miso.String:                        4511
     Miso.Svg.Attribute:                 1102
@@ -164,5 +164,5 @@ vector-0.12.0.3-Ljxp3Ug7QBk3GWhyQE0Ewc
 
 
 
-packed metadata: 287415
+packed metadata: 288413
 
