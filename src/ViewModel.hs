@@ -108,9 +108,8 @@ termArea model =
   input_
     [ type_ "text"
     , id_ "term-input"
-    , if isJust $ model ^? output . inputError . _Just . _ExprError
-        then class_ "form-control is-invalid"
-        else class_ "form-control"
+    , class_ "form-control"
+    , classList_ [("is-invalid", isJust $ model ^? output . inputError . _Just . _ExprError)]
     , placeholder_ "(\\x.x) y"
     , value_ (model^.termInput)
     , onInput TermInput
@@ -301,14 +300,13 @@ defArea model =
             , textProp "style" "padding:0"
             ]
             [ textarea_
-                ((if isJust $ model ^? output . inputError . _Just . _DefError
-                    then [class_ "form-control is-invalid"]
-                    else [class_ "form-control", textProp "style" "border:0"])
-                ++  [ type_ "text"
+                [ class_ "form-control"
+                , classList_ [("is-invalid", isJust $ model ^? output . inputError . _Just . _DefError)]
+                , type_ "text"
                     , rows_ "15"
                     , onInput DefInput
                     , value_ (model^.defInput)
-                    ])
+                ]
                 []
             ]
         ]

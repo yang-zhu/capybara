@@ -16,7 +16,7 @@ The user can type a lambda expression in the input box and choose an evaluation 
 
 Variable names can be letters except for λ, digits and underscores. But they must start with a letter.
 
-Supercombinators without parameters are also supported. Some supercombinators defining Church encodings are already provided. You can add your own ones of course.
+Supercombinators without parameters are also supported. Some supercombinators are already provided. You can add your own ones of course.
 
 When there are errors in your term or supercombinator definitions, the corresponding box will light up and an error message is displayed.
 

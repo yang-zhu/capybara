@@ -101,6 +101,10 @@ svg {
   transition: border-color .15s ease-in-out,box-shadow .15s ease-in-out;
 }
 
+textarea:not(.is-invalid) {
+  border: 0;
+}
+
 #github-link {
   position: fixed;
   bottom: 4px;

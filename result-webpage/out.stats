@@ -3,12 +3,12 @@ code size summary per package:
 aeson-1.4.2.0-6oFZmLVQz2fGtrfaZYcFm5:51798
 base:                    418958
 containers-0.6.0.1-BAqcfV1UBBeCIRjPbUYeSG:130990
-ghc-prim:                41821
+ghc-prim:                41796
 ghcjs-base-0.2.0.0-JozYZ7GHc7JEfhDrWZm3NT:45236
 ghcjs-prim-0.1.1.0-EXzjGVHQlAS2XAXcu0iCbS:6539
 integer-gmp:             6323
 integer-logarithms-1.0.3-8EbIvyaPt1VK2rKaCK88I2:54062
-main:                    422544
+main:                    422036
 miso-1.7.1.0-DvigI3Zfya9H7rHjvosxkG:111385
 primitive-0.6.4.0-Ix68lo67v0n3y1QMYDPFlz:444
 profunctors-5.3-LmKhECUNDyu34ayPiKauGR:25833
@@ -85,7 +85,7 @@ ghc-prim
     GHC.Classes:                        139
     GHC.IntWord64:                      2617
     GHC.Tuple:                          3353
-    GHC.Types:                          31124
+    GHC.Types:                          31099
 
 ghcjs-base-0.2.0.0-JozYZ7GHc7JEfhDrWZm3NT
     Data.JSString:                      1526
@@ -115,8 +115,8 @@ main
     Lexer:                              1543
     Main:                               21044
     Model:                              55976
-    Parser:                             13443
-    UpdateModel:                        248868
+    Parser:                             13417
+    UpdateModel:                        248386
     ViewModel:                          50002
 
 miso-1.7.1.0-DvigI3Zfya9H7rHjvosxkG
@@ -164,5 +164,5 @@ vector-0.12.0.3-Ljxp3Ug7QBk3GWhyQE0Ewc
 
 
 
-packed metadata: 287667
+packed metadata: 287415
 
