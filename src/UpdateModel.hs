@@ -6,7 +6,7 @@ import Miso (Effect, (<#), noEff, focus)
 import Miso.String (MisoString, fromMisoString, toMisoString)
 
 import Lexer
-import Parser
+import Parser ( parseDefinitions, parseExpression )
 import GraphReduction
 import Model
 
