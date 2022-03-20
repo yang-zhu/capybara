@@ -115,6 +115,7 @@ termArea model =
     , onInput TermInput
     , onEnter Eval
     , autofocus_ True
+    , boolProp "spellcheck" False
     ]
 
 form :: Model -> View Action
@@ -125,8 +126,8 @@ form m =
 
 xScale = 10
 yScale = 40
-belowTextXDiff = 5
-belowTextYDiff = 5
+belowTextXDiff = 6
+belowTextYDiff = 6
 aboveTextYDiff = 15
 
 draw :: (Maybe NodeIndex, Graph) -> NodeIndex -> Seq Depth -> Seq XCoord -> [View Action]
@@ -236,7 +237,7 @@ renderGraph (graph1:graph2:graphs) = let
   viewBoxWidth = xScale * maximum (take (Seq.length (graph^.nodes)) rightEdges) + 30
   viewBoxHeight = yScale * maximum depths + 30
   in svg_
-      [ Miso.Svg.width_ (ms (1.5 * viewBoxWidth))
+      [ Miso.Svg.width_ (ms (1.4 * viewBoxWidth))
       , viewBox_ ("-15 -15 " <> ms viewBoxWidth <> " " <> ms viewBoxHeight)
       ]
       (draw (redex, graph) root depths xcoords)
@@ -303,9 +304,10 @@ defArea model =
                 [ class_ "form-control"
                 , classList_ [("is-invalid", isJust $ model ^? output . inputError . _Just . _DefError)]
                 , type_ "text"
-                    , rows_ "17"
-                    , onInput DefInput
-                    , value_ (model^.defInput)
+                , rows_ "17"
+                , onInput DefInput
+                , value_ (model^.defInput)
+                , boolProp "spellcheck" False
                 ]
                 []
             ]
