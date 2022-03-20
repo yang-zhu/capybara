@@ -126,10 +126,10 @@ definition = do
 abstraction :: Parser Expression
 abstraction = do
     matchKeyword "λ"
-    v <- variable
+    vars <- some variable
     matchKeyword "."
     e <- abstraction
-    return (Lam v e)
+    return $ foldr Lam e vars
     <|> application
 
 -- Parses an application
