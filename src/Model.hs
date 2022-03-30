@@ -60,7 +60,7 @@ initialModel = Model
         \Zero = λz s.z;\n\
         \Succ = λn z s. s n;\n\
         \plus = λa b. a b (λa'. plus a' (Succ b));\n\
-        \mult = λa b. a zero (λa'. plus (mult a' b) b);\n\
+        \mult = λa b. a Zero (λa'. plus (mult a' b) b);\n\
         \\n\
         \-- data List a = Nil | Cons a (List a)\n\
         \Nil = λn c.n;\n\

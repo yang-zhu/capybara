@@ -71,13 +71,13 @@ formButtons model =
             []
             [ a_
                 [class_"dropdown-item", href_ "#", onClick CBName]
-                [text (stratToStr CallByName)]
+                [text $ stratToStr CallByName]
             ]
         , li_
             []
             [ a_
                 [class_"dropdown-item", href_ "#", onClick CBValue]
-                [text (stratToStr CallByValue)]
+                [text $ stratToStr CallByValue]
             ]
         ]
     ]
@@ -147,7 +147,8 @@ draw (redex, graph) root depths xcoords = case Seq.index (graph^.nodes) root of
     eY = yScale * Seq.index depths e
     in  [ text_
             [ dominantBaseline_ "auto"
-            , textAnchor_ "middle", x_ (ms rootX)
+            , textAnchor_ "middle"
+            , x_ (ms rootX)
             , y_ (ms rootY)
             ]
             [ text ("λ"<> ms v) ]
