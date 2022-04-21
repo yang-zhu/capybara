@@ -4,7 +4,7 @@ import Data.Maybe (isJust, isNothing, fromMaybe)
 import Data.Sequence (Seq)
 import qualified Data.Sequence as Seq
 import Control.Monad.Trans.Reader (ReaderT(runReaderT))
-import Control.Monad.Trans.State (execState, runState)
+import Control.Monad.Trans.State (State, get, modify, execState, runState, evalState)
 import Control.Lens ((^.), (^?), (^?!), _1, _2, _Just, _head)
 import Miso
 import Miso.String (MisoString, ms)
@@ -130,85 +130,90 @@ belowTextXDiff = 6
 belowTextYDiff = 6
 aboveTextYDiff = 15
 
-draw :: (Maybe NodeIndex, Graph) -> NodeIndex -> Seq Depth -> Seq XCoord -> [View Action]
-draw (redex, graph) root depths xcoords = case Seq.index (graph^.nodes) root of
-  VarNode v ->
-    [ text_
-        [ textAnchor_ "middle"
-        , x_ (ms rootX)
-        , y_ (ms rootY)
-        , if Just root == redex then fontWeight_ "bolder" else fontWeight_ "normal"
-        , if Just root == redex then fill_ "#0d6efd" else fill_ "black"
-        ]
-        [ text (ms v) ]
-    ]
-  LamNode v e -> let
-    eX = xScale * Seq.index xcoords e
-    eY = yScale * Seq.index depths e
-    in  [ text_
-            [ dominantBaseline_ "auto"
-            , textAnchor_ "middle"
-            , x_ (ms rootX)
-            , y_ (ms rootY)
-            ]
-            [ text ("λ"<> ms v) ]
-        , line_
-            [ x1_ (ms rootX)
-            , x2_ (ms eX)
-            , y1_ (ms (rootY+belowTextYDiff))
-            , y2_ (ms (eY-aboveTextYDiff))
-            , stroke_ "black"
-            , strokeWidth_ "1.5"
-            , strokeLinecap_ "round"
-            ]
-            []
-        ]
-        ++ draw (redex, graph) e depths xcoords
-  AppNode e1 e2 -> let
-    e1X = xScale * Seq.index xcoords e1
-    e1Y = yScale * Seq.index depths e1
-    e2X = xScale * Seq.index xcoords e2
-    e2Y = yScale * Seq.index depths e2
-    lCtlPtX = rootX - ctlPtXDiff e1Y (e1X >= rootX)
-    rCtlPtX = rootX + ctlPtXDiff e2Y (e2X <= rootX)
-    lCtlPtY = rootY + ctlPtYDiff e1Y (e1X >= rootX)
-    rCtlPtY = rootY + ctlPtYDiff e2Y (e2X <= rootX)
-    in  [ text_
-            [ dominantBaseline_ "auto"
-            , textAnchor_ "middle"
+draw :: (Maybe NodeIndex, Graph) -> NodeIndex -> Seq Depth -> Seq XCoord -> State (Seq Bool) [View Action]
+draw (redex, graph) root depths xcoords = do
+  visited <- get
+  if Seq.index visited root
+    then return []
+    else do
+    modify (Seq.update root True)
+    case Seq.index (graph^.nodes) root of
+      VarNode v -> return
+        [ text_
+            [ textAnchor_ "middle"
             , x_ (ms rootX)
             , y_ (ms rootY)
             , if Just root == redex then fontWeight_ "bolder" else fontWeight_ "normal"
             , if Just root == redex then fill_ "#0d6efd" else fill_ "black"
             ]
-            [ text "@" ]
-        , path_
-            [ d_
-              (  "M " <> ms (rootX-belowTextXDiff) <> " " <> ms (rootY+belowTextYDiff)
-              <> "Q " <> ms lCtlPtX <> " " <> ms lCtlPtY
-              <> " " <> ms e1X <> " " <> ms (e1Y-aboveTextYDiff)
-              )
-            , fill_ "transparent"
-            , stroke_ "black"
-            , strokeWidth_ "1.5"
-            , strokeLinecap_ "round"
-            ]
-            []
-        , path_
-            [ d_
-              (  "M " <> ms (rootX+belowTextXDiff)  <> " " <> ms (rootY+belowTextYDiff)
-              <> "Q " <> ms rCtlPtX <> " " <> ms rCtlPtY
-              <> " " <> ms e2X <> " " <> ms (e2Y-aboveTextYDiff)
-              )
-            , fill_ "transparent"
-            , stroke_ "black"
-            , strokeWidth_ "1.5"
-            , strokeLinecap_ "round"
-            ]
-            []
+            [ text (ms v) ]
         ]
-        ++ draw (redex, graph) e1 depths xcoords
-        ++ draw (redex, graph) e2 depths xcoords
+      LamNode v e -> let
+        eX = xScale * Seq.index xcoords e
+        eY = yScale * Seq.index depths e
+        in ([ text_
+                [ dominantBaseline_ "auto"
+                , textAnchor_ "middle"
+                , x_ (ms rootX)
+                , y_ (ms rootY)
+                ]
+                [ text ("λ"<> ms v) ]
+            , line_
+                [ x1_ (ms rootX)
+                , x2_ (ms eX)
+                , y1_ (ms (rootY+belowTextYDiff))
+                , y2_ (ms (eY-aboveTextYDiff))
+                , stroke_ "black"
+                , strokeWidth_ "1.5"
+                , strokeLinecap_ "round"
+                ]
+                []
+            ] ++) <$> draw (redex, graph) e depths xcoords
+      AppNode e1 e2 -> let
+        e1X = xScale * Seq.index xcoords e1
+        e1Y = yScale * Seq.index depths e1
+        e2X = xScale * Seq.index xcoords e2
+        e2Y = yScale * Seq.index depths e2
+        lCtlPtX = rootX - ctlPtXDiff e1Y (e1X >= rootX)
+        rCtlPtX = rootX + ctlPtXDiff e2Y (e2X <= rootX)
+        lCtlPtY = rootY + ctlPtYDiff e1Y (e1X >= rootX)
+        rCtlPtY = rootY + ctlPtYDiff e2Y (e2X <= rootX)
+        in (++)
+          <$> ([ text_
+                [ dominantBaseline_ "auto"
+                , textAnchor_ "middle"
+                , x_ (ms rootX)
+                , y_ (ms rootY)
+                , if Just root == redex then fontWeight_ "bolder" else fontWeight_ "normal"
+                , if Just root == redex then fill_ "#0d6efd" else fill_ "black"
+                ]
+                [ text "@" ]
+                , path_
+                    [ d_
+                      (  "M " <> ms (rootX-belowTextXDiff) <> " " <> ms (rootY+belowTextYDiff)
+                      <> "Q " <> ms lCtlPtX <> " " <> ms lCtlPtY
+                      <> " " <> ms e1X <> " " <> ms (e1Y-aboveTextYDiff)
+                      )
+                    , fill_ "transparent"
+                    , stroke_ "black"
+                    , strokeWidth_ "1.5"
+                    , strokeLinecap_ "round"
+                    ]
+                    []
+                , path_
+                    [ d_
+                      (  "M " <> ms (rootX+belowTextXDiff)  <> " " <> ms (rootY+belowTextYDiff)
+                      <> "Q " <> ms rCtlPtX <> " " <> ms rCtlPtY
+                      <> " " <> ms e2X <> " " <> ms (e2Y-aboveTextYDiff)
+                      )
+                    , fill_ "transparent"
+                    , stroke_ "black"
+                    , strokeWidth_ "1.5"
+                    , strokeLinecap_ "round"
+                    ]
+                    []
+                ] ++) <$> draw (redex, graph) e1 depths xcoords
+          <*> draw (redex, graph) e2 depths xcoords
   where
     rootX = xScale * Seq.index xcoords root
     rootY = yScale * Seq.index depths root
@@ -233,15 +238,16 @@ renderGraph (graph1:graph2:graphs) = let
   (redex, _) = graph1
   (_, graph) = graph2
   root = graph ^. rootIndex
-  depths = execState (runReaderT (computeDepths root 0) graph) (Seq.replicate (Seq.length (graph^.nodes)) (-1))
-  ((rightEdges, _), xcoords) = runState (runReaderT (runReaderT (layout root 0 (repeat 0)) graph) depths) (Seq.replicate (Seq.length (graph^.nodes)) (-1))
-  viewBoxWidth = xScale * maximum (take (Seq.length (graph^.nodes)) rightEdges) + 30
+  graphSize = Seq.length (graph^.nodes)
+  depths = execState (runReaderT (computeDepths root 0) graph) (Seq.replicate graphSize (-1))
+  ((rightEdges, _), xcoords) = runState (runReaderT (runReaderT (layout root 0 (repeat 0)) graph) depths) (Seq.replicate graphSize (-1))
+  viewBoxWidth = xScale * maximum (take graphSize rightEdges) + 30
   viewBoxHeight = yScale * maximum depths + 30
   in svg_
       [ Miso.Svg.width_ (ms (1.4 * viewBoxWidth))
       , viewBox_ ("-15 -15 " <> ms viewBoxWidth <> " " <> ms viewBoxHeight)
       ]
-      (draw (redex, graph) root depths xcoords)
+      (evalState (draw (redex, graph) root depths xcoords) (Seq.replicate graphSize False))
 renderGraph _ = undefined
 
 -- | Triggers the Prev action when the left arrow key is pressed.

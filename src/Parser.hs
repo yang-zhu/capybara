@@ -18,7 +18,6 @@ import Lexer
 
 {-|
   Grammar:
-  Program ::= Definition {Definition}
   Definition ::= Variable "=" Abstraction ";"
   Abstraction ::= "λ" Variable "." Abstraction | Application
   Application ::= Atom {Atom}  -- left associative
