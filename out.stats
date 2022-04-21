@@ -8,7 +8,7 @@ ghcjs-base-0.2.0.0-JozYZ7GHc7JEfhDrWZm3NT:45236
 ghcjs-prim-0.1.1.0-EXzjGVHQlAS2XAXcu0iCbS:6539
 integer-gmp:             6323
 integer-logarithms-1.0.3-8EbIvyaPt1VK2rKaCK88I2:54062
-main:                    428943
+main:                    432697
 miso-1.7.1.0-DvigI3Zfya9H7rHjvosxkG:112432
 primitive-0.6.4.0-Ix68lo67v0n3y1QMYDPFlz:444
 profunctors-5.3-LmKhECUNDyu34ayPiKauGR:25833
@@ -115,8 +115,8 @@ main
     Lexer:                              1543
     Main:                               21503
     Model:                              59721
-    Parser:                             13447
-    UpdateModel:                        249092
+    Parser:                             13448
+    UpdateModel:                        252845
     ViewModel:                          50002
 
 miso-1.7.1.0-DvigI3Zfya9H7rHjvosxkG
@@ -164,5 +164,5 @@ vector-0.12.0.3-Ljxp3Ug7QBk3GWhyQE0Ewc
 
 
 
-packed metadata: 288413
+packed metadata: 288662
 
